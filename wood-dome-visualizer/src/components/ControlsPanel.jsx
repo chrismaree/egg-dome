@@ -38,7 +38,10 @@ const ControlsPanel = () => {
 
   return (
     <div className="w-[360px] bg-slate-900 text-white p-8 overflow-y-auto shadow-2xl">
-      <h2 className="text-2xl font-bold mb-8 text-blue-400">Wood Dome Controls</h2>
+      <h2 className="text-2xl font-bold mb-8 text-purple-400 flex items-center gap-2">
+        <span>🎯</span>
+        Shadow Controls
+      </h2>
       
       {sliderGroups.map(group => (
         <div key={group.title} className="mb-8 bg-slate-800 rounded-lg p-5">
@@ -97,6 +100,16 @@ const ControlsPanel = () => {
             className="mr-3 w-5 h-5 accent-blue-500"
           />
           <span className="text-sm">Half-Open Dome (Entrance)</span>
+        </label>
+        
+        <label className="flex items-center mb-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={parameters.showDoor}
+            onChange={(e) => updateParameter('showDoor', e.target.checked)}
+            className="mr-3 w-5 h-5 accent-blue-500"
+          />
+          <span className="text-sm">Add Door (2m × 0.75m)</span>
         </label>
         
         <label className="flex items-center mb-3 cursor-pointer">

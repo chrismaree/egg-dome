@@ -8,7 +8,8 @@ export function computeDomeGeometry(params) {
     endOverlap,
     minTopBoards = 9,
     invertShape = false,
-    enableHalfOpen = false
+    enableHalfOpen = false,
+    showDoor = false
   } = params
 
   const a = domeDiameter / 2
@@ -52,25 +53,52 @@ export function computeDomeGeometry(params) {
   }
 }
 
-export function generateBoardPositions(rowInfo, boardLength, boardThickness, enableHalfOpen, invertShape = false, totalHeight = 6) {
+export function generateBoardPositions(rowInfo, boardLength, boardThickness, enableHalfOpen, invertShape = false, totalHeight = 6, rowIndex = 0, showDoor = false) {
   const positions = []
   const { radius, fullCircleBoards, angleStep, height } = rowInfo
   const boardCount = enableHalfOpen ? Math.ceil(fullCircleBoards / 2) : fullCircleBoards
-  const startAngle = enableHalfOpen ? -Math.PI / 2 : 0
-  const endAngle = enableHalfOpen ? Math.PI / 2 : 2 * Math.PI
+  
+  // Apply offset for odd rows to create brick-laying pattern
+  const angleOffset = (rowIndex % 2 === 1) ? (angleStep / 2) : 0
+  
+  const startAngle = (enableHalfOpen ? -Math.PI / 2 : 0) + angleOffset
+  const endAngle = (enableHalfOpen ? Math.PI / 2 : 2 * Math.PI) + angleOffset
+  
+  // Door dimensions
+  const doorHeight = 2.0 // 2m
+  const doorWidth = 0.75 // 0.75m
+  const doorAngle = 0 // Door at front (0 degrees)
+  const doorAngleSpan = doorWidth / (radius / 1000) // Angular span of door
   
   for (let i = 0; i < boardCount; i++) {
     const angle = startAngle + (i * angleStep)
-    if (angle <= endAngle) {
+    if (!enableHalfOpen || (angle >= -Math.PI / 2 && angle <= Math.PI / 2)) {
       const yPos = invertShape ? (totalHeight - height / 1000) : (height / 1000)
-      positions.push({
-        x: radius * Math.cos(angle) / 1000,
-        y: yPos,
-        z: radius * Math.sin(angle) / 1000,
-        rotation: -angle + Math.PI / 2,
-        length: boardLength,
-        thickness: boardThickness / 1000
-      })
+      
+      // Check if board should be skipped for door
+      let skipForDoor = false
+      if (showDoor && invertShape) {
+        // For dome mode: check if within door height from ground
+        const actualHeight = totalHeight - yPos
+        if (actualHeight < doorHeight) {
+          // Check if this board is in the door area
+          const angleDiff = Math.abs(angle - doorAngle)
+          if (angleDiff < doorAngleSpan / 2) {
+            skipForDoor = true
+          }
+        }
+      }
+      
+      if (!skipForDoor) {
+        positions.push({
+          x: radius * Math.cos(angle) / 1000,
+          y: yPos,
+          z: radius * Math.sin(angle) / 1000,
+          rotation: -angle + Math.PI / 2,
+          length: boardLength,
+          thickness: boardThickness / 1000
+        })
+      }
     }
   }
   

@@ -6,15 +6,26 @@ const DataTable = () => {
   const parameters = useStore(state => state.parameters)
   
   const geometry = useMemo(() => {
-    return computeDomeGeometry(parameters)
+    const geo = computeDomeGeometry(parameters)
+    
+    // When inverted (dome), reverse the rows so row 1 is at the bottom
+    if (parameters.invertShape) {
+      const reversedData = [...geo.rowData].reverse().map((row, index) => ({
+        ...row,
+        row: index + 1
+      }))
+      return { ...geo, rowData: reversedData }
+    }
+    
+    return geo
   }, [parameters])
   
   return (
-    <div className="bg-white rounded-xl shadow-xl p-5 border border-gray-100">
-      <h3 className="text-lg font-bold mb-4 text-gray-800">Row Plan Details</h3>
-      <div className="overflow-x-auto rounded-lg border border-gray-200">
+    <div className="bg-white rounded-xl shadow-xl p-5 border border-gray-100 flex flex-col" style={{ maxHeight: '400px' }}>
+      <h3 className="text-lg font-bold mb-4 text-gray-800">Row Plan Details ({geometry.rows} rows)</h3>
+      <div className="overflow-auto rounded-lg border border-gray-200 flex-1">
         <table className="w-full text-sm">
-          <thead>
+          <thead className="sticky top-0 z-10">
             <tr className="border-b bg-gray-50">
               <th className="px-3 py-3 text-left font-semibold text-gray-700">Row</th>
               <th className="px-3 py-3 text-left font-semibold text-gray-700">Height (mm)</th>
@@ -24,7 +35,7 @@ const DataTable = () => {
             </tr>
           </thead>
           <tbody>
-            {geometry.rowData.slice(0, 15).map((row, index) => (
+            {geometry.rowData.map((row, index) => (
               <tr key={row.row} className={`border-b hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                 <td className="px-3 py-2 font-medium">{row.row}</td>
                 <td className="px-3 py-2">{row.height}</td>
@@ -35,11 +46,6 @@ const DataTable = () => {
             ))}
           </tbody>
         </table>
-        {geometry.rowData.length > 15 && (
-          <p className="text-center text-gray-500 text-sm py-3 bg-gray-50 border-t">
-            Showing first 15 rows of {geometry.rows}
-          </p>
-        )}
       </div>
     </div>
   )

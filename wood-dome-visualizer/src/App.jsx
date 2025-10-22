@@ -10,29 +10,33 @@ function App() {
   
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-      <header className="bg-gray-800 text-white px-6 py-4 shadow-lg">
+      <header className="bg-gradient-to-r from-purple-800 to-blue-800 text-white px-6 py-5 shadow-xl">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">🏗️ Wood Dome Visualizer</h1>
-          <div className="flex gap-2">
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <span className="text-4xl animate-pulse">✨</span>
+            Shadow Catcher
+            <span className="text-lg font-normal text-blue-200">🌙 Dome Builder</span>
+          </h1>
+          <div className="flex gap-3">
             <button
               onClick={() => setActiveTab('builder')}
-              className={`px-4 py-2 rounded transition-colors ${
+              className={`px-5 py-2.5 rounded-lg font-medium transition-all transform hover:scale-105 ${
                 activeTab === 'builder' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-white text-purple-800 shadow-lg' 
+                  : 'bg-purple-700 text-purple-100 hover:bg-purple-600'
               }`}
             >
-              Builder Mode
+              🔨 Builder Mode
             </button>
             <button
               onClick={() => setActiveTab('visualizer')}
-              className={`px-4 py-2 rounded transition-colors ${
+              className={`px-5 py-2.5 rounded-lg font-medium transition-all transform hover:scale-105 ${
                 activeTab === 'visualizer' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-white text-purple-800 shadow-lg' 
+                  : 'bg-purple-700 text-purple-100 hover:bg-purple-600'
               }`}
             >
-              Visualizer Mode
+              🎨 Visualizer Mode
             </button>
           </div>
         </div>
