@@ -40,19 +40,21 @@ function App() {
       
       <main className="flex-1 flex overflow-hidden bg-gray-50">
         {activeTab === 'builder' ? (
-          <>
+          <div className="flex-1 flex">
             <ControlsPanel />
-            <div className="flex-1 flex gap-6 p-6">
-              <div className="flex-1 rounded-xl overflow-hidden shadow-2xl">
-                <DomeRenderer />
-              </div>
-              <div className="w-[420px] space-y-6 overflow-y-auto pr-2">
-                <SummaryPanel />
-                <DataTable />
-                <ExportPanel />
+            <div className="flex-1 p-6">
+              <div className="flex gap-6 h-full">
+                <div className="flex-1 rounded-xl overflow-hidden shadow-2xl">
+                  <DomeRenderer />
+                </div>
+                <div className="w-[420px] space-y-6 overflow-y-auto pr-2">
+                  <SummaryPanel />
+                  <DataTable />
+                  <ExportPanel />
+                </div>
               </div>
             </div>
-          </>
+          </div>
         ) : (
           <div className="flex-1 p-6">
             <div className="h-full rounded-xl overflow-hidden shadow-2xl">
