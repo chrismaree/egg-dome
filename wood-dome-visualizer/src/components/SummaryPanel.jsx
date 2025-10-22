@@ -15,7 +15,7 @@ const SummaryPanel = () => {
   const stats = [
     { label: 'Total Boards', value: geometry.totalBoards, unit: '' },
     { label: 'Total Rows', value: geometry.rows, unit: '' },
-    { label: 'Total Cost', value: `€${costs.totalCost.toFixed(0)}`, unit: '' },
+    { label: 'Total Cost', value: `R${costs.totalCost.toFixed(0)}`, unit: '' },
     { label: 'Wood Needed', value: costs.totalLinearMeters.toFixed(0), unit: 'm' },
     { label: 'Stock Pieces', value: costs.stocksNeeded, unit: '' },
     { label: 'Wood Volume', value: costs.totalVolume.toFixed(2), unit: 'm³' },

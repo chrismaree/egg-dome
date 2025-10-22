@@ -69,9 +69,20 @@ input[type="range"]::-moz-range-thumb {
 input[type="range"]:hover::-webkit-slider-thumb {
   background: #2563EB;
   border-color: #3B82F6;
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
 }
 
 input[type="range"]:hover::-moz-range-thumb {
   background: #2563EB;
   border-color: #3B82F6;
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Progress fill effect for webkit browsers */
+input[type="range"]::-webkit-slider-runnable-track {
+  background: #475569;
+  height: 8px;
+  border-radius: 0.5rem;
 }

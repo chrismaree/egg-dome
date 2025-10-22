@@ -7,6 +7,7 @@ export function computeDomeGeometry(params) {
     verticalGap,
     endOverlap,
     minTopBoards = 9,
+    invertShape = false,
     enableHalfOpen = false
   } = params
 
@@ -51,7 +52,7 @@ export function computeDomeGeometry(params) {
   }
 }
 
-export function generateBoardPositions(rowInfo, boardLength, boardThickness, enableHalfOpen) {
+export function generateBoardPositions(rowInfo, boardLength, boardThickness, enableHalfOpen, invertShape = false, totalHeight = 6) {
   const positions = []
   const { radius, fullCircleBoards, angleStep, height } = rowInfo
   const boardCount = enableHalfOpen ? Math.ceil(fullCircleBoards / 2) : fullCircleBoards
@@ -61,9 +62,10 @@ export function generateBoardPositions(rowInfo, boardLength, boardThickness, ena
   for (let i = 0; i < boardCount; i++) {
     const angle = startAngle + (i * angleStep)
     if (angle <= endAngle) {
+      const yPos = invertShape ? (totalHeight - height / 1000) : (height / 1000)
       positions.push({
         x: radius * Math.cos(angle) / 1000,
-        y: height / 1000,
+        y: yPos,
         z: radius * Math.sin(angle) / 1000,
         rotation: -angle + Math.PI / 2,
         length: boardLength,

@@ -35,7 +35,7 @@ function CentralLight({ intensity, color, showLighting }) {
   return (
     <group position={[0, 1, 0]}>
       <mesh>
-        <dodecahedronGeometry args={[0.5]} />
+        <dodecahedronGeometry args={[1]} />
         <meshStandardMaterial 
           color={color}
           emissive={color}
@@ -45,7 +45,7 @@ function CentralLight({ intensity, color, showLighting }) {
       <pointLight 
         color={color} 
         intensity={intensity / 20} 
-        distance={10}
+        distance={15}
         castShadow
       />
     </group>
@@ -64,7 +64,9 @@ function DomeStructure() {
         row,
         parameters.boardLength,
         parameters.boardThickness,
-        parameters.enableHalfOpen
+        parameters.enableHalfOpen,
+        parameters.invertShape,
+        parameters.domeHeight
       )
       
       positions.forEach((pos, boardIndex) => {

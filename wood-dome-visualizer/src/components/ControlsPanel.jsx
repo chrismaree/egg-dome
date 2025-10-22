@@ -9,7 +9,7 @@ const ControlsPanel = () => {
       title: 'Dome Dimensions',
       controls: [
         { name: 'domeHeight', label: 'Height (m)', min: 3, max: 8, step: 0.1 },
-        { name: 'domeDiameter', label: 'Diameter (m)', min: 4, max: 10, step: 0.1 }
+        { name: 'domeDiameter', label: 'Diameter (m)', min: 4, max: 12, step: 0.1 }
       ]
     },
     {
@@ -17,7 +17,7 @@ const ControlsPanel = () => {
       controls: [
         { name: 'boardLength', label: 'Board Length (m)', min: 1.5, max: 3.0, step: 0.01 },
         { name: 'boardThickness', label: 'Thickness (mm)', min: 20, max: 60, step: 1 },
-        { name: 'boardWidth', label: 'Width (mm)', min: 80, max: 150, step: 1 }
+        { name: 'boardWidth', label: 'Width (mm)', min: 80, max: 180, step: 1 }
       ]
     },
     {
@@ -66,7 +66,7 @@ const ControlsPanel = () => {
       <div className="mb-8 bg-slate-800 rounded-lg p-5">
         <h3 className="text-lg font-semibold mb-4 text-gray-100">Pricing</h3>
         <div className="mb-4">
-          <label className="text-sm block mb-1">Price per 6m Stock (€)</label>
+          <label className="text-sm block mb-1">Price per 6m Stock (ZAR)</label>
           <input
             type="number"
             value={parameters.pricePerStock}
@@ -78,6 +78,16 @@ const ControlsPanel = () => {
       
       <div className="mb-8 bg-slate-800 rounded-lg p-5">
         <h3 className="text-lg font-semibold mb-4 text-gray-100">Display Options</h3>
+        
+        <label className="flex items-center mb-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={parameters.invertShape}
+            onChange={(e) => updateParameter('invertShape', e.target.checked)}
+            className="mr-3 w-5 h-5 accent-blue-500"
+          />
+          <span className="text-sm">Invert Shape (Dome → Cup)</span>
+        </label>
         
         <label className="flex items-center mb-3 cursor-pointer">
           <input

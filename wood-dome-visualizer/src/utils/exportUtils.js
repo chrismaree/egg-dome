@@ -10,7 +10,7 @@ export function exportToCSV(rowData, params, costs) {
     '',
     'Summary',
     `Total Boards,${costs.totalBoards}`,
-    `Total Cost (EUR),${costs.totalCost.toFixed(2)}`,
+    `Total Cost (ZAR),${costs.totalCost.toFixed(2)}`,
     `Stocks Needed,${costs.stocksNeeded}`,
     `Total Volume (m³),${costs.totalVolume.toFixed(3)}`,
     `Total Weight (kg),${costs.totalWeight.toFixed(1)}`
@@ -69,8 +69,8 @@ export function generateBOM(params, costs, geometry) {
     `Estimated Weight: ${costs.totalWeight.toFixed(1)} kg`,
     '',
     'COST ESTIMATE:',
-    `Price per 6m Stock: €${params.pricePerStock}`,
-    `Total Cost: €${costs.totalCost.toFixed(2)}`,
+    `Price per 6m Stock: R${params.pricePerStock}`,
+    `Total Cost: R${costs.totalCost.toFixed(2)}`,
     '',
     `Generated: ${new Date().toLocaleString()}`
   ]
