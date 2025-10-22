@@ -23,7 +23,8 @@ const ControlsPanel = () => {
     {
       title: 'Construction Details',
       controls: [
-        { name: 'verticalGap', label: 'Vertical Gap (mm)', min: 0, max: 50, step: 1 },
+        { name: 'verticalGap', label: 'Inter-Row Vertical Gap (mm)', min: -150, max: 50, step: 1 },
+        { name: 'sameRowVerticalGap', label: 'Same-Row Vertical Gap (mm)', min: -50, max: parameters.boardWidth, step: 1 },
         { name: 'endOverlap', label: 'End Overlap (mm)', min: 0, max: 100, step: 1 },
         { name: 'minTopBoards', label: 'Min Boards at Top', min: 4, max: 20, step: 1 }
       ]

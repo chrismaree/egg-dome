@@ -125,7 +125,8 @@ function DomeStructure() {
         parameters.invertShape,
         parameters.domeHeight,
         rowIndex,
-        parameters.showDoor
+        parameters.showDoor,
+        parameters.sameRowVerticalGap
       )
       
       positions.forEach((pos, boardIndex) => {

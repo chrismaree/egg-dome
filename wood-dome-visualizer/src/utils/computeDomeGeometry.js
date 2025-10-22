@@ -53,7 +53,7 @@ export function computeDomeGeometry(params) {
   }
 }
 
-export function generateBoardPositions(rowInfo, boardLength, boardThickness, enableHalfOpen, invertShape = false, totalHeight = 6, rowIndex = 0, showDoor = false) {
+export function generateBoardPositions(rowInfo, boardLength, boardThickness, enableHalfOpen, invertShape = false, totalHeight = 6, rowIndex = 0, showDoor = false, sameRowVerticalGap = 0) {
   const positions = []
   const { radius, fullCircleBoards, angleStep, height } = rowInfo
   const boardCount = enableHalfOpen ? Math.ceil(fullCircleBoards / 2) : fullCircleBoards
@@ -75,27 +75,53 @@ export function generateBoardPositions(rowInfo, boardLength, boardThickness, ena
     if (!enableHalfOpen || (angle >= -Math.PI / 2 && angle <= Math.PI / 2)) {
       const yPos = invertShape ? (totalHeight - height / 1000) : (height / 1000)
       
-      // Check if board should be skipped for door
-      let skipForDoor = false
+      // Apply alternating vertical offset within same row
+      const verticalOffset = (i % 2 === 0 ? 1 : -1) * (sameRowVerticalGap / 2000)
+      const adjustedYPos = yPos + verticalOffset
+      
+      // Check if board needs to be modified for door
+      let modifiedLength = boardLength
+      let skipBoard = false
+      
       if (showDoor && invertShape) {
         // For dome mode: check if within door height from ground
         const actualHeight = totalHeight - yPos
         if (actualHeight < doorHeight) {
-          // Check if this board is in the door area
-          const angleDiff = Math.abs(angle - doorAngle)
-          if (angleDiff < doorAngleSpan / 2) {
-            skipForDoor = true
+          // Calculate the angle span of this board
+          const boardStartAngle = angle - (angleStep / 2)
+          const boardEndAngle = angle + (angleStep / 2)
+          const doorStartAngle = doorAngle - (doorAngleSpan / 2)
+          const doorEndAngle = doorAngle + (doorAngleSpan / 2)
+          
+          // Check if board intersects with door opening
+          if (boardEndAngle > doorStartAngle && boardStartAngle < doorEndAngle) {
+            // Board intersects door - calculate how much to shorten it
+            const boardCenterX = radius * Math.cos(angle) / 1000
+            const boardCenterZ = radius * Math.sin(angle) / 1000
+            
+            // If board center is within door area, skip it entirely
+            if (angle > doorStartAngle && angle < doorEndAngle) {
+              skipBoard = true
+            } else {
+              // Otherwise, shorten the board to terminate at door edge
+              // This is a simplified approach - just reduce length proportionally
+              const overlapRatio = Math.min(
+                Math.abs(boardEndAngle - doorStartAngle),
+                Math.abs(doorEndAngle - boardStartAngle)
+              ) / angleStep
+              modifiedLength = boardLength * (1 - overlapRatio * 0.5)
+            }
           }
         }
       }
       
-      if (!skipForDoor) {
+      if (!skipBoard) {
         positions.push({
           x: radius * Math.cos(angle) / 1000,
-          y: yPos,
+          y: adjustedYPos,
           z: radius * Math.sin(angle) / 1000,
           rotation: -angle + Math.PI / 2,
-          length: boardLength,
+          length: modifiedLength,
           thickness: boardThickness / 1000
         })
       }
