@@ -22,7 +22,7 @@ function Board({ position, rotation, length, width = 0.114, thickness = 0.038, r
   }, [renderMode])
   
   return (
-    <mesh ref={meshRef} position={position} rotation={[0, rotation, 0]}>
+    <mesh ref={meshRef} position={position} rotation={[0, rotation, 0]} receiveShadow castShadow>
       <boxGeometry args={[length, width, thickness]} />
       {material}
     </mesh>
@@ -32,24 +32,255 @@ function Board({ position, rotation, length, width = 0.114, thickness = 0.038, r
 function CentralLight({ intensity, color, showLighting }) {
   if (!showLighting) return null
   
+  // Create intricate Islamic/geometric pattern for each face
+  const createFacePattern = (size) => {
+    const patterns = []
+    
+    // Outer pentagon frame
+    for (let i = 0; i < 5; i++) {
+      const angle1 = (i / 5) * Math.PI * 2 - Math.PI/2
+      const angle2 = ((i + 1) / 5) * Math.PI * 2 - Math.PI/2
+      const r = size * 0.45
+      patterns.push({
+        type: 'line',
+        x1: Math.cos(angle1) * r,
+        y1: Math.sin(angle1) * r,
+        x2: Math.cos(angle2) * r,
+        y2: Math.sin(angle2) * r,
+        width: 0.015
+      })
+    }
+    
+    // Inner star pattern
+    for (let i = 0; i < 10; i++) {
+      const isOuter = i % 2 === 0
+      const angle = (i / 10) * Math.PI * 2 - Math.PI/2
+      const r1 = isOuter ? size * 0.35 : size * 0.2
+      const nextAngle = ((i + 1) / 10) * Math.PI * 2 - Math.PI/2
+      const r2 = ((i + 1) % 2 === 0) ? size * 0.35 : size * 0.2
+      patterns.push({
+        type: 'line',
+        x1: Math.cos(angle) * r1,
+        y1: Math.sin(angle) * r1,
+        x2: Math.cos(nextAngle) * r2,
+        y2: Math.sin(nextAngle) * r2,
+        width: 0.01
+      })
+    }
+    
+    // Radiating lines from center
+    for (let i = 0; i < 10; i++) {
+      const angle = (i / 10) * Math.PI * 2 - Math.PI/2
+      const r1 = size * 0.05
+      const r2 = i % 2 === 0 ? size * 0.35 : size * 0.2
+      patterns.push({
+        type: 'line',
+        x1: Math.cos(angle) * r1,
+        y1: Math.sin(angle) * r1,
+        x2: Math.cos(angle) * r2,
+        y2: Math.sin(angle) * r2,
+        width: 0.008
+      })
+    }
+    
+    // Small decorative triangles
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2 - Math.PI/2
+      const r = size * 0.28
+      const x = Math.cos(angle) * r
+      const y = Math.sin(angle) * r
+      
+      // Triangle points
+      for (let j = 0; j < 3; j++) {
+        const a1 = angle + (j / 3) * Math.PI/2.5
+        const a2 = angle + ((j + 1) / 3) * Math.PI/2.5
+        patterns.push({
+          type: 'line',
+          x1: x + Math.cos(a1) * size * 0.06,
+          y1: y + Math.sin(a1) * size * 0.06,
+          x2: x + Math.cos(a2) * size * 0.06,
+          y2: y + Math.sin(a2) * size * 0.06,
+          width: 0.008
+        })
+      }
+    }
+    
+    return patterns
+  }
+  
   return (
-    <group position={[0, 1, 0]}>
-      <mesh>
-        <dodecahedronGeometry args={[1]} />
-        <meshStandardMaterial 
-          color={color}
-          emissive={color}
-          emissiveIntensity={intensity / 50}
+    <group position={[0, 0.2, 0]}>
+      {/* Elevated legs */}
+      {[...Array(5)].map((_, i) => {
+        const angle = (i / 5) * Math.PI * 2
+        const radius = 0.6
+        return (
+          <mesh key={`leg-${i}`} position={[Math.cos(angle) * radius, -0.1, Math.sin(angle) * radius]}>
+            <cylinderGeometry args={[0.02, 0.02, 0.4]} />
+            <meshStandardMaterial color="#1A1A1A" roughness={0.9} metalness={0.1} />
+          </mesh>
+        )
+      })}
+      
+      {/* Regular dodecahedron 2m tall */}
+      <group position={[0, 1, 0]}>
+        {/* Dodecahedron frame - only edges visible for debugging */}
+        {false && (
+          <mesh>
+            <dodecahedronGeometry args={[1]} />
+            <meshBasicMaterial wireframe color="#333333" />
+          </mesh>
+        )}
+        
+        {/* Pattern cutouts on each face */}
+        {(() => {
+          // Create a reference dodecahedron to get face positions
+          const geometry = new THREE.DodecahedronGeometry(1)
+          
+          // Golden ratio
+          const phi = (1 + Math.sqrt(5)) / 2
+          
+          // Dodecahedron face centers normalized
+          const faceCenters = [
+            [0, phi, 1/phi],
+            [0, phi, -1/phi],
+            [0, -phi, 1/phi],
+            [0, -phi, -1/phi],
+            [1/phi, 0, phi],
+            [-1/phi, 0, phi],
+            [1/phi, 0, -phi],
+            [-1/phi, 0, -phi],
+            [phi, 1/phi, 0],
+            [phi, -1/phi, 0],
+            [-phi, 1/phi, 0],
+            [-phi, -1/phi, 0]
+          ].map(v => {
+            const len = Math.sqrt(v[0]**2 + v[1]**2 + v[2]**2)
+            return new THREE.Vector3(v[0]/len, v[1]/len, v[2]/len)
+          })
+          
+          // Distance from center to face for unit dodecahedron
+          const faceDistance = 0.85065
+          
+          return faceCenters.map((normal, idx) => {
+            const position = normal.clone().multiplyScalar(faceDistance + 0.001) // Slightly outside
+            
+            // Create rotation to align pattern with face
+            const quaternion = new THREE.Quaternion()
+            quaternion.setFromUnitVectors(
+              new THREE.Vector3(0, 0, 1),
+              normal
+            )
+            const euler = new THREE.Euler().setFromQuaternion(quaternion)
+            
+            return (
+              <group key={idx} position={[position.x, position.y, position.z]} rotation={[euler.x, euler.y, euler.z]}>
+                {/* Semi-transparent background for light to pass through */}
+                <mesh>
+                  <circleGeometry args={[0.525, 5]} />
+                  <meshBasicMaterial 
+                    transparent
+                    opacity={0}
+                  />
+                </mesh>
+                
+                {/* Pattern lines that block light */}
+                {createFacePattern(1.0).map((pattern, i) => {
+                  if (pattern.type === 'line') {
+                    const dx = pattern.x2 - pattern.x1
+                    const dy = pattern.y2 - pattern.y1
+                    const length = Math.sqrt(dx*dx + dy*dy)
+                    const midX = (pattern.x1 + pattern.x2) / 2
+                    const midY = (pattern.y1 + pattern.y2) / 2
+                    const rotation = Math.atan2(dy, dx)
+                    
+                    return (
+                      <mesh key={i} position={[midX, midY, 0]} rotation={[0, 0, rotation]} castShadow>
+                        <planeGeometry args={[length, pattern.width]} />
+                        <meshStandardMaterial 
+                          color="#1A0F08"
+                          roughness={0.95}
+                          metalness={0.05}
+                        />
+                      </mesh>
+                    )
+                  }
+                  return null
+                })}
+              </group>
+            )
+          })
+        })()}
+        
+        {/* Single bright omnidirectional light source */}
+        <mesh>
+          <sphereGeometry args={[0.1]} />
+          <meshStandardMaterial 
+            color={color}
+            emissive={color}
+            emissiveIntensity={intensity}
+          />
+        </mesh>
+        
+        {/* Single high-quality omnidirectional point light */}
+        <pointLight 
+          position={[0, 0, 0]}
+          color={color} 
+          intensity={intensity * 2} 
+          castShadow
+          shadow-mapSize={[4096, 4096]}
+          shadow-camera-near={0.01}
+          shadow-camera-far={25}
+          shadow-bias={-0.0001}
+          shadow-normalBias={0.02}
         />
-      </mesh>
-      <pointLight 
-        color={color} 
-        intensity={intensity / 20} 
-        distance={15}
-        castShadow
-      />
+      </group>
     </group>
   )
+}
+
+function ShadowPanels({ domeDiameter, domeHeight }) {
+  const panelCount = 8
+  const panels = []
+  
+  // Create geometric panels around the dome
+  for (let i = 0; i < panelCount; i++) {
+    const angle = (i / panelCount) * Math.PI * 2
+    const radius = domeDiameter / 2 + 2 // Position panels just outside dome
+    const x = Math.cos(angle) * radius
+    const z = Math.sin(angle) * radius
+    
+    // Alternate between different panel heights and patterns
+    const panelHeight = i % 2 === 0 ? domeHeight * 0.8 : domeHeight * 0.6
+    const panelWidth = 3
+    const rotation = angle + Math.PI / 2
+    
+    panels.push(
+      <group key={i} position={[x, panelHeight / 2, z]} rotation={[0, rotation, 0]}>
+        {/* Main panel */}
+        <mesh castShadow>
+          <boxGeometry args={[panelWidth, panelHeight, 0.1]} />
+          <meshStandardMaterial color="#2C1810" roughness={0.9} metalness={0.1} />
+        </mesh>
+        
+        {/* Decorative cutouts for pattern */}
+        {i % 2 === 0 && (
+          <>
+            <mesh position={[0, panelHeight * 0.3, -0.06]} castShadow>
+              <boxGeometry args={[panelWidth * 0.6, panelHeight * 0.2, 0.2]} />
+              <meshBasicMaterial color="#000000" />
+            </mesh>
+            <mesh position={[0, -panelHeight * 0.2, -0.06]} castShadow>
+              <cylinderGeometry args={[panelWidth * 0.3, panelWidth * 0.3, 0.2]} />
+              <meshBasicMaterial color="#000000" />
+            </mesh>
+          </>
+        )}
+      </group>
+    )
+  }
+  
+  return <group>{panels}</group>
 }
 
 function DoorFrame({ domeDiameter, domeHeight, invertShape }) {
@@ -167,6 +398,12 @@ function DomeStructure() {
           invertShape={parameters.invertShape}
         />
       )}
+      {parameters.showShadowPanels && (
+        <ShadowPanels 
+          domeDiameter={parameters.domeDiameter}
+          domeHeight={parameters.domeHeight}
+        />
+      )}
     </>
   )
 }
@@ -223,35 +460,15 @@ function Ground() {
     return normalTexture
   }, [])
   
+  // Removed displacement - keeping ground completely flat
   useEffect(() => {
     if (meshRef.current) {
       const geometry = meshRef.current.geometry
       const positions = geometry.attributes.position
       
-      // Create dramatic desert dunes with controlled amplitude
+      // Set all Z positions to 0 for completely flat ground
       for (let i = 0; i < positions.count; i++) {
-        const x = positions.getX(i)
-        const y = positions.getY(i)
-        
-        // Distance from center for edge falloff
-        const distance = Math.sqrt(x * x + y * y)
-        const edgeFalloff = Math.max(0, 1 - (distance / 45))
-        
-        // Major dune patterns - more controlled height
-        const dune1 = Math.sin(x * 0.05) * 3.5 * Math.cos(y * 0.03)
-        const dune2 = Math.sin((x - 20) * 0.03 + 1) * 2.5
-        const dune3 = Math.cos(y * 0.04) * 2
-        
-        // Medium frequency waves
-        const wave1 = Math.sin(x * 0.1 + y * 0.05) * 0.8
-        const wave2 = Math.cos(x * 0.08 - y * 0.06) * 0.6
-        
-        // Small ripples
-        const ripple = Math.sin(x * 0.3) * 0.2 * Math.cos(y * 0.35) * 0.15
-        
-        // Combine all effects with edge falloff to prevent holes
-        const z = (dune1 + dune2 + dune3 + wave1 + wave2 + ripple) * edgeFalloff * 0.7
-        positions.setZ(i, Math.max(z, -0.5)) // Prevent going too low
+        positions.setZ(i, 0)
       }
       
       positions.needsUpdate = true
@@ -261,61 +478,21 @@ function Ground() {
   
   return (
     <group>
-      {/* Base plane to prevent holes */}
+      {/* Single flat ground plane for clean shadow reception */}
       <mesh 
         rotation={[-Math.PI / 2, 0, 0]} 
-        position={[0, -0.5, 0]} 
+        position={[0, 0, 0]} 
         receiveShadow
       >
-        <planeGeometry args={[120, 120]} />
+        <planeGeometry args={[100, 100]} />
         <meshStandardMaterial 
-          color="#D2B48C"
-          roughness={1}
+          map={texture}
+          roughness={0.95}
           metalness={0}
         />
       </mesh>
       
-      {/* Main desert ground with displacement */}
-      <mesh 
-        ref={meshRef}
-        rotation={[-Math.PI / 2, 0, 0]} 
-        position={[0, 0, 0]} 
-        receiveShadow
-        castShadow
-      >
-        <planeGeometry args={[100, 100, 200, 200]} />
-        <meshStandardMaterial 
-          map={texture}
-          normalMap={normalMap}
-          normalScale={[0.5, 0.5]}
-          roughness={0.95}
-          metalness={0.05}
-          envMapIntensity={0.2}
-        />
-      </mesh>
       
-      
-      {/* Desert rocks and debris */}
-      {[...Array(8)].map((_, i) => {
-        const x = (Math.random() - 0.5) * 30
-        const z = (Math.random() - 0.5) * 30
-        const size = 0.1 + Math.random() * 0.4
-        
-        return (
-          <mesh 
-            key={`rock-${i}`}
-            position={[x, size / 2, z]} 
-            castShadow
-            rotation={[Math.random() * Math.PI, Math.random() * Math.PI, 0]}
-          >
-            <dodecahedronGeometry args={[size]} />
-            <meshStandardMaterial 
-              color={`hsl(${30 + Math.random() * 20}, ${30 + Math.random() * 20}%, ${40 + Math.random() * 20}%)`}
-              roughness={1} 
-            />
-          </mesh>
-        )
-      })}
     </group>
   )
 }
@@ -341,24 +518,17 @@ const DomeRenderer = () => {
   
   return (
     <div className="relative w-full h-full bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-700">
-      <Canvas shadows>
+      <Canvas shadows="soft">
         <PerspectiveCamera makeDefault position={[10, 7, 10]} />
         <CameraController view={parameters.cameraView} />
         
-        <ambientLight intensity={0.3} color="#FFE4B5" />
+        <ambientLight intensity={0.25} color="#FFE4B5" />
         <directionalLight
           position={[10, 15, 5]}
-          intensity={1.5}
+          intensity={0.3}
           color="#FFF8DC"
-          castShadow
-          shadow-mapSize={2048}
-          shadow-camera-left={-30}
-          shadow-camera-right={30}
-          shadow-camera-top={30}
-          shadow-camera-bottom={-30}
+          castShadow={false}
         />
-        <pointLight position={[-10, 5, -10]} intensity={0.3} color="#FFB6C1" />
-        <pointLight position={[15, 8, 15]} intensity={0.2} color="#FFA500" />
         
         <DomeStructure />
         <Ground />
