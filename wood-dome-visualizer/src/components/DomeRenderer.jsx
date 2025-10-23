@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, PerspectiveCamera, Box } from '@react-three/drei'
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
 import useStore from '../store'
 import { computeDomeGeometry, generateBoardPositions } from '../utils/computeDomeGeometry'
@@ -124,67 +124,76 @@ function CentralLight({ intensity, color, showLighting }) {
       
       {/* Regular dodecahedron 2m tall */}
       <group position={[0, 1, 0]}>
-        {/* Dodecahedron frame - only edges visible for debugging */}
-        {false && (
-          <mesh>
-            <dodecahedronGeometry args={[1]} />
-            <meshBasicMaterial wireframe color="#333333" />
-          </mesh>
-        )}
+        {/* Base dodecahedron structure - more visible */}
+        <mesh>
+          <dodecahedronGeometry args={[1]} />
+          <meshPhysicalMaterial 
+            color="#1A0F08"
+            transmission={0.3}
+            thickness={0.5}
+            roughness={0.2}
+            metalness={0.1}
+            clearcoat={1}
+            clearcoatRoughness={0.1}
+            opacity={0.8}
+            transparent
+          />
+        </mesh>
         
-        {/* Pattern cutouts on each face */}
+        {/* Pattern overlays on each face */}
         {(() => {
-          // Create a reference dodecahedron to get face positions
+          // Create a dodecahedron geometry to extract face data
           const geometry = new THREE.DodecahedronGeometry(1)
+          const posAttr = geometry.attributes.position
           
-          // Golden ratio
-          const phi = (1 + Math.sqrt(5)) / 2
+          // Get unique face centers by processing triangles
+          const faceMap = new Map()
           
-          // Dodecahedron face centers normalized
-          const faceCenters = [
-            [0, phi, 1/phi],
-            [0, phi, -1/phi],
-            [0, -phi, 1/phi],
-            [0, -phi, -1/phi],
-            [1/phi, 0, phi],
-            [-1/phi, 0, phi],
-            [1/phi, 0, -phi],
-            [-1/phi, 0, -phi],
-            [phi, 1/phi, 0],
-            [phi, -1/phi, 0],
-            [-phi, 1/phi, 0],
-            [-phi, -1/phi, 0]
-          ].map(v => {
-            const len = Math.sqrt(v[0]**2 + v[1]**2 + v[2]**2)
-            return new THREE.Vector3(v[0]/len, v[1]/len, v[2]/len)
-          })
+          for (let i = 0; i < posAttr.count; i += 3) {
+            // Get triangle vertices
+            const v1 = new THREE.Vector3(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i))
+            const v2 = new THREE.Vector3(posAttr.getX(i+1), posAttr.getY(i+1), posAttr.getZ(i+1))
+            const v3 = new THREE.Vector3(posAttr.getX(i+2), posAttr.getY(i+2), posAttr.getZ(i+2))
+            
+            // Calculate face center
+            const center = new THREE.Vector3().addVectors(v1, v2).add(v3).divideScalar(3)
+            
+            // Calculate face normal
+            const edge1 = new THREE.Vector3().subVectors(v2, v1)
+            const edge2 = new THREE.Vector3().subVectors(v3, v1)
+            const normal = new THREE.Vector3().crossVectors(edge1, edge2).normalize()
+            
+            // Create unique key for face
+            const key = `${Math.round(normal.x*10)}_${Math.round(normal.y*10)}_${Math.round(normal.z*10)}`
+            
+            if (!faceMap.has(key)) {
+              faceMap.set(key, { center: center.clone(), normal: normal.clone() })
+            }
+          }
           
-          // Distance from center to face for unit dodecahedron
-          const faceDistance = 0.85065
+          const faces = Array.from(faceMap.values()).slice(0, 12) // Ensure we only get 12 faces
           
-          return faceCenters.map((normal, idx) => {
-            const position = normal.clone().multiplyScalar(faceDistance + 0.001) // Slightly outside
+          return faces.map((face, idx) => {
+            // Position pattern exactly on face surface (0.8506 is the exact distance for a unit dodecahedron)
+            const position = face.center.normalize().multiplyScalar(0.8507)
             
             // Create rotation to align pattern with face
             const quaternion = new THREE.Quaternion()
             quaternion.setFromUnitVectors(
               new THREE.Vector3(0, 0, 1),
-              normal
+              face.normal
             )
             const euler = new THREE.Euler().setFromQuaternion(quaternion)
             
             return (
               <group key={idx} position={[position.x, position.y, position.z]} rotation={[euler.x, euler.y, euler.z]}>
-                {/* Semi-transparent background for light to pass through */}
+                {/* Pentagon base to ensure full face coverage */}
                 <mesh>
                   <circleGeometry args={[0.525, 5]} />
-                  <meshBasicMaterial 
-                    transparent
-                    opacity={0}
-                  />
+                  <meshBasicMaterial color="#0A0805" opacity={0.9} transparent />
                 </mesh>
                 
-                {/* Pattern lines that block light */}
+                {/* Pattern lines that create the openings */}
                 {createFacePattern(1.0).map((pattern, i) => {
                   if (pattern.type === 'line') {
                     const dx = pattern.x2 - pattern.x1
@@ -239,106 +248,8 @@ function CentralLight({ intensity, color, showLighting }) {
   )
 }
 
-function ShadowPanels({ domeDiameter, domeHeight }) {
-  const panelCount = 8
-  const panels = []
-  
-  // Create geometric panels around the dome
-  for (let i = 0; i < panelCount; i++) {
-    const angle = (i / panelCount) * Math.PI * 2
-    const radius = domeDiameter / 2 + 2 // Position panels just outside dome
-    const x = Math.cos(angle) * radius
-    const z = Math.sin(angle) * radius
-    
-    // Alternate between different panel heights and patterns
-    const panelHeight = i % 2 === 0 ? domeHeight * 0.8 : domeHeight * 0.6
-    const panelWidth = 3
-    const rotation = angle + Math.PI / 2
-    
-    panels.push(
-      <group key={i} position={[x, panelHeight / 2, z]} rotation={[0, rotation, 0]}>
-        {/* Main panel */}
-        <mesh castShadow>
-          <boxGeometry args={[panelWidth, panelHeight, 0.1]} />
-          <meshStandardMaterial color="#2C1810" roughness={0.9} metalness={0.1} />
-        </mesh>
-        
-        {/* Decorative cutouts for pattern */}
-        {i % 2 === 0 && (
-          <>
-            <mesh position={[0, panelHeight * 0.3, -0.06]} castShadow>
-              <boxGeometry args={[panelWidth * 0.6, panelHeight * 0.2, 0.2]} />
-              <meshBasicMaterial color="#000000" />
-            </mesh>
-            <mesh position={[0, -panelHeight * 0.2, -0.06]} castShadow>
-              <cylinderGeometry args={[panelWidth * 0.3, panelWidth * 0.3, 0.2]} />
-              <meshBasicMaterial color="#000000" />
-            </mesh>
-          </>
-        )}
-      </group>
-    )
-  }
-  
-  return <group>{panels}</group>
-}
 
-function DoorFrame({ domeDiameter, domeHeight, invertShape }) {
-  const doorHeight = 2.0
-  const doorWidth = 0.75
-  const frameThickness = 0.1
-  const frameDepth = 0.2
-  
-  if (!invertShape) return null // Door only works on dome mode (when inverted is true)
-  
-  // Calculate radius at ground level for proper positioning
-  const a = domeDiameter / 2
-  const H = domeHeight
-  const R = (a * a + H * H) / (2 * H)
-  
-  // For inverted shape (dome), ground level is at the bottom
-  const groundLevel = 0.1 // Small offset from ground
-  const groundRadius = Math.sqrt(R * R - (R - groundLevel) * (R - groundLevel))
-  
-  return (
-    <group>
-      {/* Position door frame at the perimeter of the dome */}
-      <group position={[0, 0, groundRadius - frameDepth/2]}>
-        {/* Left vertical frame */}
-        <Box 
-          args={[frameThickness, doorHeight, frameDepth]} 
-          position={[-doorWidth/2 - frameThickness/2, doorHeight/2, 0]}
-        >
-          <meshStandardMaterial color="#654321" roughness={0.8} metalness={0.1} />
-        </Box>
-        
-        {/* Right vertical frame */}
-        <Box 
-          args={[frameThickness, doorHeight, frameDepth]} 
-          position={[doorWidth/2 + frameThickness/2, doorHeight/2, 0]}
-        >
-          <meshStandardMaterial color="#654321" roughness={0.8} metalness={0.1} />
-        </Box>
-        
-        {/* Top horizontal frame */}
-        <Box 
-          args={[doorWidth + 2*frameThickness, frameThickness, frameDepth]} 
-          position={[0, doorHeight + frameThickness/2, 0]}
-        >
-          <meshStandardMaterial color="#654321" roughness={0.8} metalness={0.1} />
-        </Box>
-        
-        {/* Floor threshold */}
-        <Box 
-          args={[doorWidth + 2*frameThickness, 0.05, frameDepth]} 
-          position={[0, 0.025, 0]}
-        >
-          <meshStandardMaterial color="#654321" roughness={0.8} metalness={0.1} />
-        </Box>
-      </group>
-    </group>
-  )
-}
+// Door cutout is now handled in the geometry generation, no need for a separate frame component
 
 function DomeStructure() {
   const parameters = useStore(state => state.parameters)
@@ -391,19 +302,6 @@ function DomeStructure() {
         color={parameters.lightColor}
         showLighting={parameters.showLighting}
       />
-      {parameters.showDoor && (
-        <DoorFrame 
-          domeDiameter={parameters.domeDiameter}
-          domeHeight={parameters.domeHeight}
-          invertShape={parameters.invertShape}
-        />
-      )}
-      {parameters.showShadowPanels && (
-        <ShadowPanels 
-          domeDiameter={parameters.domeDiameter}
-          domeHeight={parameters.domeHeight}
-        />
-      )}
     </>
   )
 }

@@ -110,7 +110,7 @@ const ControlsPanel = () => {
             onChange={(e) => updateParameter('showDoor', e.target.checked)}
             className="mr-3 w-5 h-5 accent-blue-500"
           />
-          <span className="text-sm">Add Door (2m × 0.75m)</span>
+          <span className="text-sm">Add Entrance Cutout (2m × 0.75m)</span>
         </label>
         
         <label className="flex items-center mb-3 cursor-pointer">
@@ -121,16 +121,6 @@ const ControlsPanel = () => {
             className="mr-3 w-5 h-5 accent-blue-500"
           />
           <span className="text-sm">Show Central Light</span>
-        </label>
-        
-        <label className="flex items-center mb-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={parameters.showShadowPanels}
-            onChange={(e) => updateParameter('showShadowPanels', e.target.checked)}
-            className="mr-3 w-5 h-5 accent-blue-500"
-          />
-          <span className="text-sm">Show Shadow Panels</span>
         </label>
         
         <div className="mb-4">

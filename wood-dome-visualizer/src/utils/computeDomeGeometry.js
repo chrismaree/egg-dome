@@ -80,36 +80,84 @@ export function generateBoardPositions(rowInfo, boardLength, boardThickness, ena
       const adjustedYPos = yPos + verticalOffset
       
       // Check if board needs to be modified for door
-      let modifiedLength = boardLength
+      let boardStart = -boardLength / 2
+      let boardEnd = boardLength / 2
       let skipBoard = false
       
       if (showDoor && invertShape) {
         // For dome mode: check if within door height from ground
-        const actualHeight = totalHeight - yPos
-        if (actualHeight < doorHeight) {
-          // Calculate the angle span of this board
-          const boardStartAngle = angle - (angleStep / 2)
-          const boardEndAngle = angle + (angleStep / 2)
-          const doorStartAngle = doorAngle - (doorAngleSpan / 2)
-          const doorEndAngle = doorAngle + (doorAngleSpan / 2)
+        // yPos is the height of this board row above ground
+        if (yPos < doorHeight) {
+          // Normalize angle to 0-2π range, accounting for brick-laying offset
+          let normalizedAngle = angle - angleOffset  // Remove the offset first
+          while (normalizedAngle < 0) normalizedAngle += Math.PI * 2
+          while (normalizedAngle > Math.PI * 2) normalizedAngle -= Math.PI * 2
           
-          // Check if board intersects with door opening
-          if (boardEndAngle > doorStartAngle && boardStartAngle < doorEndAngle) {
-            // Board intersects door - calculate how much to shorten it
-            const boardCenterX = radius * Math.cos(angle) / 1000
-            const boardCenterZ = radius * Math.sin(angle) / 1000
+          // Door is centered at angle 0 (facing forward)
+          const doorCenterAngle = 0
+          const doorHalfAngle = doorAngleSpan / 2
+          
+          // Check if this board position is within door angular range
+          let angleDiff = Math.abs(normalizedAngle - doorCenterAngle)
+          if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff
+          
+          if (angleDiff < doorHalfAngle) {
+            // Board is in door area - calculate how to modify it
+            const doorEdgeDistance = doorWidth / 2
+            const boardX = radius * Math.cos(angle) / 1000
+            const boardZ = radius * Math.sin(angle) / 1000
             
-            // If board center is within door area, skip it entirely
-            if (angle > doorStartAngle && angle < doorEndAngle) {
+            // Calculate board direction vector
+            const boardDirX = -Math.sin(angle)
+            const boardDirZ = Math.cos(angle)
+            
+            // Calculate board endpoints in world space
+            const startPointX = boardX + boardDirX * boardStart
+            const startPointZ = boardZ + boardDirZ * boardStart
+            const endPointX = boardX + boardDirX * boardEnd
+            const endPointZ = boardZ + boardDirZ * boardEnd
+            
+            // Check if board crosses door edges
+            const doorLeft = -doorWidth / 2
+            const doorRight = doorWidth / 2
+            
+            // For boards at the front of the dome (angle near 0)
+            // Check if board should be skipped entirely or trimmed
+            if (Math.abs(normalizedAngle) < doorHalfAngle) {
+              // Board is fully within door opening - skip it
               skipBoard = true
-            } else {
-              // Otherwise, shorten the board to terminate at door edge
-              // This is a simplified approach - just reduce length proportionally
-              const overlapRatio = Math.min(
-                Math.abs(boardEndAngle - doorStartAngle),
-                Math.abs(doorEndAngle - boardStartAngle)
-              ) / angleStep
-              modifiedLength = boardLength * (1 - overlapRatio * 0.5)
+            } else if (Math.abs(normalizedAngle) < doorHalfAngle * 3) {
+              // Board is near the door - calculate if it extends into door space
+              // Each board is tangent to the circle, so we need to check its endpoints
+              
+              // Calculate board endpoints in angular terms
+              const boardArcLength = boardLength / (radius / 1000)
+              const boardStartAngle = normalizedAngle - boardArcLength / 2
+              const boardEndAngle = normalizedAngle + boardArcLength / 2
+              
+              // Check if board overlaps with door opening
+              if (boardStartAngle < doorHalfAngle && boardEndAngle > -doorHalfAngle) {
+                // Board crosses into door area
+                if (normalizedAngle > 0) {
+                  // Board is on right side of door
+                  if (boardStartAngle < doorHalfAngle) {
+                    // Trim left side of board to door edge
+                    const newStartAngle = doorHalfAngle
+                    const newArcLength = boardEndAngle - newStartAngle
+                    const newLength = newArcLength * (radius / 1000)
+                    boardStart = boardEnd - newLength
+                  }
+                } else {
+                  // Board is on left side of door
+                  if (boardEndAngle > -doorHalfAngle) {
+                    // Trim right side of board to door edge
+                    const newEndAngle = -doorHalfAngle
+                    const newArcLength = newEndAngle - boardStartAngle
+                    const newLength = newArcLength * (radius / 1000)
+                    boardEnd = boardStart + newLength
+                  }
+                }
+              }
             }
           }
         }
@@ -121,7 +169,7 @@ export function generateBoardPositions(rowInfo, boardLength, boardThickness, ena
           y: adjustedYPos,
           z: radius * Math.sin(angle) / 1000,
           rotation: -angle + Math.PI / 2,
-          length: modifiedLength,
+          length: boardEnd - boardStart,
           thickness: boardThickness / 1000
         })
       }
