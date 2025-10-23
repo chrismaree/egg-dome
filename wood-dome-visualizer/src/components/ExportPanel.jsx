@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import useStore from '../store'
 import { computeDomeGeometry } from '../utils/computeDomeGeometry'
 import { computeCosts } from '../utils/computeCosts'
-import { exportToCSV, exportToJSON, exportCanvasAsImage, generateBOM } from '../utils/exportUtils'
+import { exportToCSV, exportToJSON, exportCanvasAsImage, generateBOM, exportTo3D } from '../utils/exportUtils'
 
 const ExportPanel = () => {
   const parameters = useStore(state => state.parameters)
@@ -32,11 +32,16 @@ const ExportPanel = () => {
     generateBOM(parameters, costs, geometry)
   }
   
+  const handleSTLExport = () => {
+    exportTo3D(parameters, geometry, 'stl')
+  }
+  
   const exportButtons = [
     { label: 'Export CSV', icon: '📊', onClick: handleCSVExport, color: 'bg-green-500 hover:bg-green-600' },
     { label: 'Export JSON', icon: '🧮', onClick: handleJSONExport, color: 'bg-purple-500 hover:bg-purple-600' },
     { label: 'Save Image', icon: '📸', onClick: handleImageExport, color: 'bg-blue-500 hover:bg-blue-600' },
-    { label: 'Export BOM', icon: '📋', onClick: handleBOMExport, color: 'bg-orange-500 hover:bg-orange-600' }
+    { label: 'Export BOM', icon: '📋', onClick: handleBOMExport, color: 'bg-orange-500 hover:bg-orange-600' },
+    { label: 'Export STL', icon: '🔧', onClick: handleSTLExport, color: 'bg-indigo-500 hover:bg-indigo-600' }
   ]
   
   return (

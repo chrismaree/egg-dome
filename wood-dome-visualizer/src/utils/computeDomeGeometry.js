@@ -126,36 +126,22 @@ export function generateBoardPositions(rowInfo, boardLength, boardThickness, ena
             if (Math.abs(normalizedAngle) < doorHalfAngle) {
               // Board is fully within door opening - skip it
               skipBoard = true
-            } else if (Math.abs(normalizedAngle) < doorHalfAngle * 3) {
-              // Board is near the door - calculate if it extends into door space
-              // Each board is tangent to the circle, so we need to check its endpoints
+            } else {
+              // Board is outside door but might be adjacent to it
+              // Check if this board is the first one outside the door opening
+              const nextAngle = normalizedAngle > 0 ? normalizedAngle - angleStep : normalizedAngle + angleStep
               
-              // Calculate board endpoints in angular terms
-              const boardArcLength = boardLength / (radius / 1000)
-              const boardStartAngle = normalizedAngle - boardArcLength / 2
-              const boardEndAngle = normalizedAngle + boardArcLength / 2
-              
-              // Check if board overlaps with door opening
-              if (boardStartAngle < doorHalfAngle && boardEndAngle > -doorHalfAngle) {
-                // Board crosses into door area
+              // If the next board position would be inside the door, this board needs to be cut
+              if (Math.abs(nextAngle) < doorHalfAngle) {
+                // This board is adjacent to the door opening - cut it in half
                 if (normalizedAngle > 0) {
-                  // Board is on right side of door
-                  if (boardStartAngle < doorHalfAngle) {
-                    // Trim left side of board to door edge
-                    const newStartAngle = doorHalfAngle
-                    const newArcLength = boardEndAngle - newStartAngle
-                    const newLength = newArcLength * (radius / 1000)
-                    boardStart = boardEnd - newLength
-                  }
+                  // Board is on right side of door - keep right half
+                  boardStart = 0
+                  console.log(`Cutting board on right side of door to half length`)
                 } else {
-                  // Board is on left side of door
-                  if (boardEndAngle > -doorHalfAngle) {
-                    // Trim right side of board to door edge
-                    const newEndAngle = -doorHalfAngle
-                    const newArcLength = newEndAngle - boardStartAngle
-                    const newLength = newArcLength * (radius / 1000)
-                    boardEnd = boardStart + newLength
-                  }
+                  // Board is on left side of door - keep left half
+                  boardEnd = 0
+                  console.log(`Cutting board on left side of door to half length`)
                 }
               }
             }

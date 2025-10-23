@@ -1,4 +1,7 @@
 import { saveAs } from 'file-saver'
+import * as THREE from 'three'
+import { STLExporter } from 'three/examples/jsm/exporters/STLExporter'
+import { generateBoardPositions } from './computeDomeGeometry'
 
 export function exportToCSV(rowData, params, costs) {
   const headers = ['Row', 'Height (mm)', 'Radius (mm)', 'Boards', 'Per-End Gap (mm)']
@@ -77,4 +80,46 @@ export function generateBOM(params, costs, geometry) {
   
   const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8;' })
   saveAs(blob, `dome-bom-${new Date().toISOString().split('T')[0]}.txt`)
+}
+
+export function exportToSTL(params, geometry) {
+  // Create a Three.js scene with the dome geometry
+  const scene = new THREE.Scene()
+  const boardMaterial = new THREE.MeshBasicMaterial()
+  
+  // Generate all board positions and create mesh for each
+  geometry.rowData.forEach((row, rowIndex) => {
+    const positions = generateBoardPositions(
+      row,
+      params.boardLength,
+      params.boardThickness,
+      params.enableHalfOpen,
+      params.invertShape,
+      params.domeHeight,
+      rowIndex,
+      params.showDoor,
+      params.sameRowVerticalGap
+    )
+    
+    positions.forEach(pos => {
+      const boardGeometry = new THREE.BoxGeometry(pos.length, params.boardWidth / 1000, pos.thickness)
+      const board = new THREE.Mesh(boardGeometry, boardMaterial)
+      board.position.set(pos.x, pos.y, pos.z)
+      board.rotation.y = pos.rotation
+      scene.add(board)
+    })
+  })
+  
+  // Export to STL
+  const exporter = new STLExporter()
+  const stlString = exporter.parse(scene, { binary: false })
+  const blob = new Blob([stlString], { type: 'text/plain' })
+  saveAs(blob, `dome-${new Date().toISOString().split('T')[0]}.stl`)
+}
+
+export function exportTo3D(params, geometry, format = 'stl') {
+  // For now just support STL, but this could be extended to OBJ, etc.
+  if (format === 'stl') {
+    exportToSTL(params, geometry)
+  }
 }
