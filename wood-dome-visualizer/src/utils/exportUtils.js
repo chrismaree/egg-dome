@@ -85,7 +85,7 @@ export function generateBOM(params, costs, geometry) {
 export function exportToSTL(params, geometry) {
   // Create a Three.js scene with the dome geometry
   const scene = new THREE.Scene()
-  const boardMaterial = new THREE.MeshBasicMaterial()
+  const group = new THREE.Group()
   
   // Generate all board positions and create mesh for each
   geometry.rowData.forEach((row, rowIndex) => {
@@ -101,19 +101,24 @@ export function exportToSTL(params, geometry) {
       params.sameRowVerticalGap
     )
     
-    positions.forEach(pos => {
+    positions.forEach((pos, boardIndex) => {
       const boardGeometry = new THREE.BoxGeometry(pos.length, params.boardWidth / 1000, pos.thickness)
+      const boardMaterial = new THREE.MeshBasicMaterial()
       const board = new THREE.Mesh(boardGeometry, boardMaterial)
       board.position.set(pos.x, pos.y, pos.z)
       board.rotation.y = pos.rotation
-      scene.add(board)
+      board.updateMatrix()
+      group.add(board)
     })
   })
   
+  // Merge all geometries for better export
+  scene.add(group)
+  
   // Export to STL
   const exporter = new STLExporter()
-  const stlString = exporter.parse(scene, { binary: false })
-  const blob = new Blob([stlString], { type: 'text/plain' })
+  const stlString = exporter.parse(scene, { binary: true })
+  const blob = new Blob([stlString], { type: 'application/octet-stream' })
   saveAs(blob, `dome-${new Date().toISOString().split('T')[0]}.stl`)
 }
 

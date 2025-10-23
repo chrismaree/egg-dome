@@ -11,6 +11,9 @@ function App() {
   return (
     <div className="h-screen flex flex-col bg-gray-100">
       <header className="bg-gradient-to-r from-purple-800 to-blue-800 text-white px-6 py-5 shadow-xl">
+        <div className="bg-yellow-500 text-gray-900 px-4 py-2 mb-3 rounded-lg text-sm font-medium text-center">
+          ⚠️ This tool is meant as a calculator to estimate resources needed and does not represent a true structural representation of the final design.
+        </div>
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <span className="text-4xl animate-pulse">✨</span>
