@@ -1,6 +1,7 @@
 import { saveAs } from 'file-saver'
 import * as THREE from 'three'
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter'
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils'
 import { generateBoardPositions } from './computeDomeGeometry'
 
 export function exportToCSV(rowData, params, costs) {
@@ -83,11 +84,11 @@ export function generateBOM(params, costs, geometry) {
 }
 
 export function exportToSTL(params, geometry) {
-  // Create a Three.js scene with the dome geometry
-  const scene = new THREE.Scene()
-  const group = new THREE.Group()
+  // Create a single merged geometry for all boards
+  const geometries = []
+  let boardCount = 0
   
-  // Generate all board positions and create mesh for each
+  // Generate all board positions and create geometry for each
   geometry.rowData.forEach((row, rowIndex) => {
     const positions = generateBoardPositions(
       row,
@@ -102,29 +103,181 @@ export function exportToSTL(params, geometry) {
     )
     
     positions.forEach((pos, boardIndex) => {
+      // Create box geometry for board
       const boardGeometry = new THREE.BoxGeometry(pos.length, params.boardWidth / 1000, pos.thickness)
-      const boardMaterial = new THREE.MeshBasicMaterial()
-      const board = new THREE.Mesh(boardGeometry, boardMaterial)
-      board.position.set(pos.x, pos.y, pos.z)
-      board.rotation.y = pos.rotation
-      board.updateMatrix()
-      group.add(board)
+      
+      // Apply position and rotation transformations
+      const matrix = new THREE.Matrix4()
+      matrix.makeRotationY(pos.rotation)
+      matrix.setPosition(pos.x, pos.y, pos.z)
+      boardGeometry.applyMatrix4(matrix)
+      
+      geometries.push(boardGeometry)
+      boardCount++
     })
   })
   
-  // Merge all geometries for better export
-  scene.add(group)
+  console.log(`Exporting ${boardCount} boards to STL`)
+  
+  // Merge all geometries into one
+  const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries)
+  const material = new THREE.MeshBasicMaterial()
+  const mesh = new THREE.Mesh(mergedGeometry, material)
+  
+  // Create scene and add merged mesh
+  const scene = new THREE.Scene()
+  scene.add(mesh)
   
   // Export to STL
   const exporter = new STLExporter()
-  const stlString = exporter.parse(scene, { binary: true })
-  const blob = new Blob([stlString], { type: 'application/octet-stream' })
-  saveAs(blob, `dome-${new Date().toISOString().split('T')[0]}.stl`)
+  const stlString = exporter.parse(scene, { binary: false }) // Use ASCII for debugging
+  const blob = new Blob([stlString], { type: 'text/plain' })
+  saveAs(blob, `dome-${boardCount}-boards-${new Date().toISOString().split('T')[0]}.stl`)
+}
+
+export function exportToFusion360Script(params, geometry) {
+  // Generate Python script for Fusion 360
+  const scriptLines = [
+    '# Shadow Catcher Dome Generator for Fusion 360',
+    '# Generated on ' + new Date().toISOString(),
+    '',
+    'import adsk.core, adsk.fusion, traceback',
+    'import math',
+    '',
+    'def run(context):',
+    '    ui = None',
+    '    try:',
+    '        app = adsk.core.Application.get()',
+    '        ui = app.userInterface',
+    '        design = app.activeProduct',
+    '        rootComp = design.rootComponent',
+    '        ',
+    '        # Create new component for dome',
+    '        allOccs = rootComp.occurrences',
+    '        newOcc = allOccs.addNewComponent(adsk.core.Matrix3D.create())',
+    '        newComp = newOcc.component',
+    '        newComp.name = "Shadow Catcher Dome"',
+    '        ',
+    '        # Get construction planes',
+    '        planes = newComp.constructionPlanes',
+    '        xyPlane = newComp.xYConstructionPlane',
+    '        ',
+    '        # Parameters',
+    `        board_width = ${params.boardWidth / 1000}  # Convert mm to meters`,
+    `        board_thickness = ${params.boardThickness / 1000}`,
+    `        dome_height = ${params.domeHeight}`,
+    '        ',
+    '        # Create collection for combining bodies',
+    '        bodies = adsk.core.ObjectCollection.create()',
+    '        ',
+    '        # Function to create a board',
+    '        def create_board(x, y, z, rotation, length, thickness, width):',
+    '            sketches = newComp.sketches',
+    '            sketch = sketches.add(xyPlane)',
+    '            ',
+    '            # Draw rectangle centered at origin',
+    '            lines = sketch.sketchCurves.sketchLines',
+    '            rect = lines.addCenterRectangle(',
+    '                adsk.core.Point3D.create(0, 0, 0),',
+    '                adsk.core.Point3D.create(length/2, width/2, 0)',
+    '            )',
+    '            ',
+    '            # Extrude',
+    '            prof = sketch.profiles.item(0)',
+    '            extrudes = newComp.features.extrudeFeatures',
+    '            extInput = extrudes.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)',
+    '            distance = adsk.core.ValueInput.createByReal(thickness)',
+    '            extInput.setDistanceExtent(False, distance)',
+    '            feat = extrudes.add(extInput)',
+    '            body = feat.bodies.item(0)',
+    '            ',
+    '            # Create transform matrix',
+    '            transform = adsk.core.Matrix3D.create()',
+    '            transform.translation = adsk.core.Vector3D.create(x, y, z)',
+    '            ',
+    '            # Apply rotation around Z axis (vertical)',
+    '            origin = adsk.core.Point3D.create(x, y, z)',
+    '            axis = adsk.core.Vector3D.create(0, 0, 1)',
+    '            transform.setToRotation(rotation, axis, origin)',
+    '            ',
+    '            # Move body',
+    '            moveInput = newComp.features.moveFeatures.createInput(body, transform)',
+    '            newComp.features.moveFeatures.add(moveInput)',
+    '            ',
+    '            return body',
+    '        ',
+    '        # Board data',
+    '        boards_data = [',
+  ]
+
+  // Add board data
+  let boardCount = 0
+  geometry.rowData.forEach((row, rowIndex) => {
+    const positions = generateBoardPositions(
+      row,
+      params.boardLength,
+      params.boardThickness,
+      params.enableHalfOpen,
+      params.invertShape,
+      params.domeHeight,
+      rowIndex,
+      params.showDoor,
+      params.sameRowVerticalGap
+    )
+    
+    positions.forEach((pos) => {
+      scriptLines.push(`            (${pos.x}, ${pos.y}, ${pos.z}, ${pos.rotation}, ${pos.length}, ${pos.thickness}, ${params.boardWidth / 1000}),`)
+      boardCount++
+    })
+  })
+
+  scriptLines.push(...[
+    '        ]',
+    '        ',
+    `        ui.messageBox(f"Creating {len(boards_data)} boards...")`,
+    '        ',
+    '        # Create progress dialog',
+    '        progressDialog = ui.createProgressDialog()',
+    '        progressDialog.cancelButtonText = "Cancel"',
+    '        progressDialog.isBackgroundTranslucent = False',
+    '        progressDialog.isCancelButtonShown = True',
+    `        progressDialog.show("Creating Dome", f"Creating {len(boards_data)} boards...", 0, len(boards_data), 1)`,
+    '        ',
+    '        # Create boards',
+    '        for i, (x, y, z, rotation, length, thickness, width) in enumerate(boards_data):',
+    '            if progressDialog.wasCancelled:',
+    '                break',
+    '            body = create_board(x, y, z, rotation, length, thickness, width)',
+    '            bodies.add(body)',
+    '            progressDialog.progressValue = i + 1',
+    '            progressDialog.message = f"Creating board {i+1} of {len(boards_data)}"',
+    '            adsk.doEvents()',
+    '        ',
+    '        progressDialog.hide()',
+    '        ',
+    '        # Combine all bodies (optional - comment out if you want separate bodies)',
+    '        if bodies.count > 1:',
+    '            combineInput = newComp.features.combineFeatures.createInput(bodies.item(0), bodies)',
+    '            combineInput.operation = adsk.fusion.FeatureOperations.JoinFeatureOperation',
+    '            combineInput.isKeepToolBodies = False',
+    '            newComp.features.combineFeatures.add(combineInput)',
+    '        ',
+    `        ui.messageBox(f"Successfully created dome with {len(boards_data)} boards!")`,
+    '        ',
+    '    except:',
+    '        if ui:',
+    '            ui.messageBox("Failed:\\n{}".format(traceback.format_exc()))',
+  ])
+
+  const scriptContent = scriptLines.join('\n')
+  const blob = new Blob([scriptContent], { type: 'text/plain' })
+  saveAs(blob, `dome-fusion360-script-${new Date().toISOString().split('T')[0]}.py`)
 }
 
 export function exportTo3D(params, geometry, format = 'stl') {
-  // For now just support STL, but this could be extended to OBJ, etc.
   if (format === 'stl') {
     exportToSTL(params, geometry)
+  } else if (format === 'fusion360') {
+    exportToFusion360Script(params, geometry)
   }
 }
