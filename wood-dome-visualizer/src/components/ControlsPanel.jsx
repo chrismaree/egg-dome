@@ -1,7 +1,7 @@
 import React from 'react'
 import useStore from '../store'
 
-const ControlsPanel = () => {
+const ControlsPanel = ({ mobile = false }) => {
   const { parameters, updateParameter } = useStore()
 
   const sliderGroups = [
@@ -38,15 +38,15 @@ const ControlsPanel = () => {
   ]
 
   return (
-    <div className="w-[360px] bg-slate-900 text-white p-8 overflow-y-auto shadow-2xl">
-      <h2 className="text-2xl font-bold mb-8 text-purple-400 flex items-center gap-2">
+    <div className={`${mobile ? 'w-full' : 'w-[360px]'} bg-slate-900 text-white p-4 md:p-8 overflow-y-auto shadow-2xl`}>
+      <h2 className={`${mobile ? 'text-xl' : 'text-2xl'} font-bold mb-4 md:mb-8 text-purple-400 flex items-center gap-2`}>
         <span>🎯</span>
         Shadow Controls
       </h2>
       
       {sliderGroups.map(group => (
-        <div key={group.title} className="mb-8 bg-slate-800 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4 text-gray-100">{group.title}</h3>
+        <div key={group.title} className="mb-4 md:mb-8 bg-slate-800 rounded-lg p-3 md:p-5">
+          <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4 text-gray-100">{group.title}</h3>
           {group.controls.map(control => (
             <div key={control.name} className="mb-5">
               <div className="flex justify-between mb-2">

@@ -52,15 +52,15 @@ const ExportPanel = () => {
   return (
     <div className="bg-white rounded-xl shadow-xl p-5 border border-gray-100">
       <h3 className="text-lg font-bold mb-4 text-gray-800">Export Options</h3>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
         {exportButtons.map((button, index) => (
           <button
             key={index}
             onClick={button.onClick}
-            className={`${button.color} flex flex-col items-center justify-center gap-1 px-3 py-3 text-white rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg`}
+            className={`${button.color} flex flex-col items-center justify-center gap-1 px-2 py-2.5 md:px-3 md:py-3 text-white rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg`}
           >
-            <span className="text-2xl">{button.icon}</span>
-            <span className="text-xs font-medium">{button.label}</span>
+            <span className="text-xl md:text-2xl">{button.icon}</span>
+            <span className="text-[10px] md:text-xs font-medium text-center leading-tight">{button.label}</span>
           </button>
         ))}
       </div>
