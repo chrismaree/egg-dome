@@ -444,6 +444,12 @@ function MarkerElement({ element }) {
 
 function PolylineElement({ element }) {
   const points = element.points.map(p => new THREE.Vector3(p.x, p.z, -p.y))
+  
+  // Manually ensure the polygon is closed by adding the first point at the end
+  if (points.length > 0 && !points[0].equals(points[points.length - 1])) {
+    points.push(points[0].clone())
+  }
+  
   return <Line points={points} color="#ffff00" lineWidth={3} />
 }
 

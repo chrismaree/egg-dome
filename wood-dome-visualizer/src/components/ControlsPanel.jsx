@@ -261,7 +261,7 @@ const ControlsPanel = ({ mobile = false, mode = 'default' }) => {
               onChange={(e) => updateParameter('showInnerPolygon', e.target.checked)}
               className="mr-3 w-4 h-4 text-[#28a745] focus:ring-[#28a745] focus:ring-2 rounded cursor-pointer"
             />
-            <span className="text-sm text-[#666]">Show Edge Connection Lines</span>
+            <span className="text-sm text-[#666]">Show Inner Polygon</span>
           </label>
           
           <label className="flex items-center mb-3 cursor-pointer">

@@ -252,72 +252,74 @@ export function computeBeamIntersectionGeometry(params) {
       })
     }
     
-    // Calculate intersection points for this row
-    const intersectionPoints = []
-    for (let i = 0; i < n; i++) {
-      const v1 = vertices[i]
-      const v2 = vertices[(i + 1) % n]
+    // Generate intersection markers for this row (including bottom row)
+    if (showIntersections || showInnerPolygon) {
+      const intersectionPoints = []
       
-      // Calculate intercept positions along edge
-      const t1 = cEdge / s
-      const t2 = 1 - cEdge / s
-      
-      // Interpolate positions
-      const p1 = {
-        x: v1.x + t1 * (v2.x - v1.x),
-        y: v1.y + t1 * (v2.y - v1.y),
-        z: 0
-      }
-      const p2 = {
-        x: v1.x + t2 * (v2.x - v1.x),
-        y: v1.y + t2 * (v2.y - v1.y),
-        z: 0
-      }
-      
-      // Apply rotation for this row
-      const rotP1X = p1.x * Math.cos(thetaRow) - p1.y * Math.sin(thetaRow)
-      const rotP1Y = p1.x * Math.sin(thetaRow) + p1.y * Math.cos(thetaRow)
-      const rotP2X = p2.x * Math.cos(thetaRow) - p2.y * Math.sin(thetaRow)
-      const rotP2Y = p2.x * Math.sin(thetaRow) + p2.y * Math.cos(thetaRow)
-      
-      intersectionPoints.push({ x: rotP1X, y: rotP1Y, z: z })
-      intersectionPoints.push({ x: rotP2X, y: rotP2Y, z: z })
-      
-      // Add markers if enabled
-      if (showIntersections) {
-        elementData.push({
-          id: elementId++,
-          type: 'marker',
-          subtype: 'intercept',
-          row: row,
-          edgeIndex: i,
-          position: { x: rotP1X, y: rotP1Y, z: z }
-        })
-        
-        elementData.push({
-          id: elementId++,
-          type: 'marker',
-          subtype: 'intercept',
-          row: row,
-          edgeIndex: i,
-          position: { x: rotP2X, y: rotP2Y, z: z }
-        })
-      }
-    }
-    
-    // Add edge connection lines if enabled
-    if (showInnerPolygon && intersectionPoints.length > 0) {
-      // Create lines connecting the two intersection points on each edge
       for (let i = 0; i < n; i++) {
-        const p1 = intersectionPoints[i * 2]
-        const p2 = intersectionPoints[i * 2 + 1]
+        const v1 = vertices[i]
+        const v2 = vertices[(i + 1) % n]
+        
+        // Calculate intercept positions along edge
+        const t1 = cEdge / s
+        const t2 = 1 - cEdge / s
+        
+        // Interpolate positions
+        const p1 = {
+          x: v1.x + t1 * (v2.x - v1.x),
+          y: v1.y + t1 * (v2.y - v1.y),
+          z: 0
+        }
+        const p2 = {
+          x: v1.x + t2 * (v2.x - v1.x),
+          y: v1.y + t2 * (v2.y - v1.y),
+          z: 0
+        }
+        
+        // Apply rotation for this row
+        const rotP1X = p1.x * Math.cos(thetaRow) - p1.y * Math.sin(thetaRow)
+        const rotP1Y = p1.x * Math.sin(thetaRow) + p1.y * Math.cos(thetaRow)
+        const rotP2X = p2.x * Math.cos(thetaRow) - p2.y * Math.sin(thetaRow)
+        const rotP2Y = p2.x * Math.sin(thetaRow) + p2.y * Math.cos(thetaRow)
+        
+        // Add markers if showIntersections is enabled
+        if (showIntersections) {
+          elementData.push({
+            id: elementId++,
+            type: 'marker',
+            subtype: 'intercept',
+            row: row,
+            edgeIndex: i,
+            position: { x: rotP1X, y: rotP1Y, z: z }
+          })
+          
+          elementData.push({
+            id: elementId++,
+            type: 'marker',
+            subtype: 'intercept',
+            row: row,
+            edgeIndex: i,
+            position: { x: rotP2X, y: rotP2Y, z: z }
+          })
+        }
+        
+        intersectionPoints.push({ x: rotP1X, y: rotP1Y, z: z })
+        intersectionPoints.push({ x: rotP2X, y: rotP2Y, z: z })
+      }
+      
+      // Add inner polygon if enabled
+      if (showInnerPolygon && intersectionPoints.length > 0) {
+        // Create inner polygon by connecting only the first intersection point from each edge
+        const innerPolygonPoints = []
+        for (let i = 0; i < intersectionPoints.length; i += 2) {
+          innerPolygonPoints.push(intersectionPoints[i])
+        }
         
         elementData.push({
           id: elementId++,
           type: 'polyline',
           row: row,
-          edgeIndex: i,
-          points: [p1, p2]
+          points: innerPolygonPoints
         })
       }
     }
