@@ -31,66 +31,61 @@ function App() {
   }, [showModeMenu])
   
   return (
-    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
-      <header className="bg-gradient-to-r from-purple-800 to-blue-800 text-white px-4 md:px-6 py-3 md:py-5 shadow-xl">
-        <div>
-          <h1 className="text-2xl md:text-4xl font-bold mb-3 flex items-center gap-3">
-            <span className="text-3xl md:text-5xl animate-pulse">✨</span>
+    <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#f5f5f5', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif' }}>
+      <header style={{backgroundColor: '#f5f5f5', padding: '16px'}}>
+        <div style={{backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', padding: '24px', margin: '0 auto'}}>
+          <h1 className="text-2xl md:text-3xl font-semibold mb-4 text-[#333] flex items-center gap-3">
+            <span className="text-[#28a745]">✨</span>
             Dream Catcher Calculator
-            <span className="text-3xl md:text-5xl animate-pulse">✨</span>
+            <span className="text-[#28a745]">✨</span>
           </h1>
           
-          <nav className="flex items-center gap-6 md:gap-10 text-sm md:text-base">
+          <nav className="flex items-center text-sm" style={{gap: '5px'}}>
             {activeTab === 'builder' ? (
-              <span className="text-white font-bold">🔨 Dome Builder</span>
+              <span className="font-bold" style={{color: '#000'}}>Dome Builder</span>
             ) : (
               <a
                 href="#"
                 onClick={(e) => { e.preventDefault(); setActiveTab('builder') }}
-                className="text-blue-300 hover:text-white underline"
+                className="text-[#2196f3] hover:text-[#1976d2] transition-colors underline"
               >
-                🔨 Dome Builder
+                Dome Builder
               </a>
             )}
             
-            <span className="text-gray-300">|</span>
+            <span style={{color: '#ddd'}}>|</span>
             
             {activeTab === 'intersections' ? (
-              <span className="text-white font-bold">📐 Layer Interceptor</span>
+              <span className="font-bold" style={{color: '#000'}}>Layer Interceptor</span>
             ) : (
               <a
                 href="#"
                 onClick={(e) => { e.preventDefault(); setActiveTab('intersections') }}
-                className="text-blue-300 hover:text-white underline"
+                className="text-[#2196f3] hover:text-[#1976d2] transition-colors underline"
               >
-                📐 Layer Interceptor
+                Layer Interceptor
               </a>
             )}
             
-            <span className="text-gray-300">|</span>
+            <span style={{color: '#ddd'}}>|</span>
             
             {activeTab === 'visualizer' ? (
-              <span className="text-white font-bold">🎨 Visualizer</span>
+              <span className="font-bold" style={{color: '#000'}}>Visualizer</span>
             ) : (
               <a
                 href="#"
                 onClick={(e) => { e.preventDefault(); setActiveTab('visualizer') }}
-                className="text-blue-300 hover:text-white underline"
+                className="text-[#2196f3] hover:text-[#1976d2] transition-colors underline"
               >
-                🎨 Visualizer
+                Visualizer
               </a>
             )}
           </nav>
           
-          {activeTab === 'builder' && (
-            <div className="bg-yellow-500 text-gray-900 px-3 py-1.5 mt-3 rounded-lg text-xs md:text-sm font-medium">
-              ⚠️ This tool is meant as a calculator to estimate resources needed and does not represent a true structural representation of the final design.
-            </div>
-          )}
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col overflow-hidden bg-gray-50">
+      <main className="flex-1 flex flex-col overflow-hidden" style={{backgroundColor: '#f5f5f5'}}>
         {/* Mobile Tab Navigation */}
         {isMobile && activeTab === 'builder' && (
           <div className="md:hidden flex bg-white border-b border-gray-200 shadow-sm">
@@ -134,7 +129,7 @@ function App() {
               <div className="flex-1 flex flex-col">
                 {mobileTab === '3d' && (
                   <div className="flex-1 p-4">
-                    <div className="h-full rounded-xl overflow-hidden shadow-2xl">
+                    <div className="h-full overflow-hidden" style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
                       <DomeRenderer />
                     </div>
                   </div>
@@ -156,12 +151,12 @@ function App() {
               // Desktop Layout
               <div className="flex-1 flex">
                 <ControlsPanel />
-                <div className="flex-1 p-6">
-                  <div className="flex gap-6 h-full">
-                    <div className="flex-1 rounded-xl overflow-hidden shadow-2xl">
+                <div className="flex-1" style={{padding: '16px'}}>
+                  <div className="flex h-full" style={{gap: '16px'}}>
+                    <div className="flex-1 overflow-hidden" style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
                       <DomeRenderer />
                     </div>
-                    <div className="w-[420px] space-y-6 overflow-y-auto pr-2">
+                    <div className="w-[420px] overflow-y-auto" style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
                       <SummaryPanel />
                       <DataTable />
                       <ExportPanel />
@@ -172,8 +167,8 @@ function App() {
             )
           ) : activeTab === 'visualizer' ? (
             // Visualizer Mode
-            <div className="flex-1 p-4 md:p-6">
-              <div className="h-full rounded-xl overflow-hidden shadow-2xl">
+            <div className="flex-1" style={{padding: '16px'}}>
+              <div className="h-full overflow-hidden" style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
                 <DomeRenderer />
               </div>
             </div>
@@ -181,9 +176,9 @@ function App() {
             // Beam Intersections Mode
             <div className="flex-1 flex">
               <ControlsPanel mode="intersections" />
-              <div className="flex-1 p-6">
-                <div className="flex gap-6 h-full">
-                  <div className="flex-1 rounded-xl overflow-hidden shadow-2xl">
+              <div className="flex-1" style={{padding: '16px'}}>
+                <div className="flex h-full" style={{gap: '16px'}}>
+                  <div className="flex-1 overflow-hidden" style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
                     <DomeRenderer mode="intersections" />
                   </div>
                   <div className="w-[420px] overflow-y-auto pr-2">

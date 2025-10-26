@@ -24,18 +24,22 @@ const SummaryPanel = () => {
   ]
   
   return (
-    <div className="bg-white rounded-xl shadow-xl p-4 md:p-6 border border-gray-100">
-      <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-5 text-gray-800">Project Summary</h3>
-      <div className="grid grid-cols-2 gap-2 md:gap-4">
-        {stats.map((stat, index) => (
-          <div key={index} className="border border-gray-200 rounded-lg p-2.5 md:p-4 bg-gradient-to-br from-gray-50 to-white hover:shadow-md transition-shadow">
-            <p className="text-[10px] md:text-xs text-gray-500 uppercase tracking-wider">{stat.label}</p>
-            <p className="text-base md:text-xl font-bold text-gray-800 mt-0.5 md:mt-1">
-              {stat.value}
-              {stat.unit && <span className="text-xs md:text-sm font-normal text-gray-600 ml-1">{stat.unit}</span>}
-            </p>
-          </div>
-        ))}
+    <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', padding: '20px' }}>
+      <h3 className="text-base md:text-lg font-semibold mb-3 text-[#333]">Project Summary</h3>
+      <div className="overflow-auto rounded-lg" style={{backgroundColor: 'white', border: '1px solid #e9ecef'}}>
+        <table className="w-full text-sm">
+          <tbody>
+            {stats.map((stat, index) => (
+              <tr key={index} className="hover:bg-gray-50 transition-colors" style={{borderBottom: index < stats.length - 1 ? '1px solid #f0f0f0' : 'none'}}>
+                <td className="px-3 py-2 text-[#666]">{stat.label}</td>
+                <td className="px-3 py-2 text-right font-medium text-[#333]">
+                  {stat.value}
+                  {stat.unit && <span className="font-normal text-[#666] ml-1">{stat.unit}</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   )

@@ -398,8 +398,9 @@ function Ground() {
 function BeamElement({ element, colorScheme, row, totalRows }) {
   const color = useMemo(() => {
     if (colorScheme === 'byLayer') {
+      // Pastel colors with higher lightness and lower saturation
       const hue = (row / totalRows) * 360
-      return `hsl(${hue}, 70%, 50%)`
+      return `hsl(${hue}, 50%, 75%)`  // Reduced saturation to 50%, increased lightness to 75%
     } else {
       return '#8B6F47'
     }
@@ -515,8 +516,9 @@ function CameraController({ view, mode = 'default' }) {
   
   useEffect(() => {
     if (mode === 'intersections') {
-      // Geometry is normalized, so use fixed camera position
-      camera.position.set(15, 10, 15)
+      // Adjust camera position based on geometry size
+      const cameraDistance = Math.max(15, parameters.s / 150)
+      camera.position.set(cameraDistance, cameraDistance * 0.67, cameraDistance)
       const centerHeight = (parameters.rows * parameters.layerHeight * 10) / (2 * parameters.s)
       camera.lookAt(0, centerHeight, 0)
     } else if (view === 'inside') {
@@ -534,9 +536,10 @@ function CameraController({ view, mode = 'default' }) {
 const DomeRenderer = ({ mode = 'default' }) => {
   const parameters = useStore(state => state.parameters)
   
-  // For intersections mode, geometry is normalized to ~10 unit radius
+  // For intersections mode, adjust camera based on geometry size
+  const cameraDistance = mode === 'intersections' ? Math.max(15, parameters.s / 150) : 10
   const cameraPosition = mode === 'intersections' 
-    ? [15, 10, 15]  // Fixed position since geometry is normalized
+    ? [cameraDistance, cameraDistance * 0.67, cameraDistance]
     : [10, 7, 10]
   
   return (
@@ -557,10 +560,10 @@ const DomeRenderer = ({ mode = 'default' }) => {
           <>
             <BeamIntersectionStructure />
             {parameters.gridOn && (
-              <gridHelper args={[20, 20]} position={[0, 0, 0]} />
+              <gridHelper args={[Math.max(30, parameters.s / 50), 20]} position={[0, 0, 0]} />
             )}
             {parameters.axesOn && (
-              <axesHelper args={[5]} />
+              <axesHelper args={[Math.max(10, parameters.s / 100)]} />
             )}
           </>
         ) : (
@@ -574,7 +577,7 @@ const DomeRenderer = ({ mode = 'default' }) => {
           enableDamping
           dampingFactor={0.05}
           minDistance={mode === 'intersections' ? 3 : 2}
-          maxDistance={mode === 'intersections' ? 50 : 20}
+          maxDistance={mode === 'intersections' ? Math.max(50, parameters.s / 30) : 20}
           maxPolarAngle={Math.PI / 2}
         />
       </Canvas>

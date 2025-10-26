@@ -104,17 +104,37 @@ const ExportPanel = ({ mode = 'default' }) => {
   ]
   
   return (
-    <div className="bg-white rounded-xl shadow-xl p-5 border border-gray-100">
-      <h3 className="text-lg font-bold mb-4 text-gray-800">Export Options</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
+    <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', padding: '20px' }}>
+      <h3 className="text-base font-semibold mb-4 text-[#333]">Export Options</h3>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {exportButtons.map((button, index) => (
           <button
             key={index}
             onClick={button.onClick}
-            className={`${button.color} flex flex-col items-center justify-center gap-1 px-2 py-2.5 md:px-3 md:py-3 text-white rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg`}
+            className="flex items-center justify-center px-4 py-2.5 transition-all"
+            style={{
+              backgroundColor: 'white',
+              border: '1px solid #dee2e6',
+              borderRadius: '6px',
+              color: '#495057',
+              cursor: 'pointer',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = '#f8f9fa';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.08)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'white';
+              e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
-            <span className="text-xl md:text-2xl">{button.icon}</span>
-            <span className="text-[10px] md:text-xs font-medium text-center leading-tight">{button.label}</span>
+            <span className="text-sm font-medium flex items-center gap-2">
+              <span className="text-base">{button.icon}</span>
+              {button.label}
+            </span>
           </button>
         ))}
       </div>

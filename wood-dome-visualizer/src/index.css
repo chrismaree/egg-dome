@@ -17,7 +17,7 @@ input[type="range"] {
   appearance: none;
   width: 100%;
   height: 8px;
-  background: #475569;
+  background: #e5e7eb;
   border-radius: 0.5rem;
   outline: none;
   cursor: pointer;
@@ -27,17 +27,17 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-track {
   width: 100%;
   height: 8px;
-  background: #475569;
+  background: #e5e7eb;
   border-radius: 0.5rem;
-  border: 1px solid #64748b;
+  border: none;
 }
 
 input[type="range"]::-moz-range-track {
   width: 100%;
   height: 8px;
-  background: #475569;
+  background: #e5e7eb;
   border-radius: 0.5rem;
-  border: 1px solid #64748b;
+  border: none;
 }
 
 /* Thumb styling */
@@ -82,7 +82,7 @@ input[type="range"]:hover::-moz-range-thumb {
 
 /* Progress fill effect for webkit browsers */
 input[type="range"]::-webkit-slider-runnable-track {
-  background: #475569;
+  background: #e5e7eb;
   height: 8px;
   border-radius: 0.5rem;
 }
