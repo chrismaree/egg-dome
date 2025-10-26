@@ -49,14 +49,14 @@ const ControlsPanel = ({ mobile = false, mode = 'default' }) => {
           
           <div className="mb-5">
             <div className="flex justify-between mb-2">
-              <label className="text-sm text-gray-300">Side Length (s)</label>
-              <span className="text-sm font-mono bg-slate-700 px-2 py-1 rounded text-blue-300">{parameters.s}</span>
+              <label className="text-sm text-gray-300">Side Length (mm)</label>
+              <span className="text-sm font-mono bg-slate-700 px-2 py-1 rounded text-blue-300">{parameters.s} mm</span>
             </div>
             <input
               type="range"
-              min={50}
-              max={2000}
-              step={10}
+              min={500}
+              max={20000}
+              step={100}
               value={parameters.s}
               onChange={(e) => updateParameter('s', parseFloat(e.target.value))}
               className="w-full"
@@ -147,12 +147,24 @@ const ControlsPanel = ({ mobile = false, mode = 'default' }) => {
         
         {/* Beam Dimensions */}
         <div className="mb-4 md:mb-8 bg-slate-800 rounded-lg p-3 md:p-5">
-          <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4 text-gray-100">Beam Dimensions</h3>
+          <div className="flex justify-between items-center mb-3 md:mb-4">
+            <h3 className="text-base md:text-lg font-semibold text-gray-100">Beam Dimensions</h3>
+            <button
+              onClick={() => {
+                updateParameter('layerHeight', 40)
+                updateParameter('beamThickness', 38)
+                updateParameter('beamDepth', 152)
+              }}
+              className="text-xs px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-gray-300 hover:text-white transition-colors"
+            >
+              Reset
+            </button>
+          </div>
           
           <div className="mb-5">
             <div className="flex justify-between mb-2">
-              <label className="text-sm text-gray-300">Layer Height</label>
-              <span className="text-sm font-mono bg-slate-700 px-2 py-1 rounded text-blue-300">{parameters.layerHeight}</span>
+              <label className="text-sm text-gray-300">Layer Height (mm)</label>
+              <span className="text-sm font-mono bg-slate-700 px-2 py-1 rounded text-blue-300">{parameters.layerHeight} mm</span>
             </div>
             <input
               type="range"
@@ -167,14 +179,14 @@ const ControlsPanel = ({ mobile = false, mode = 'default' }) => {
           
           <div className="mb-5">
             <div className="flex justify-between mb-2">
-              <label className="text-sm text-gray-300">Beam Thickness</label>
-              <span className="text-sm font-mono bg-slate-700 px-2 py-1 rounded text-blue-300">{parameters.beamThickness}</span>
+              <label className="text-sm text-gray-300">Beam Thickness (mm)</label>
+              <span className="text-sm font-mono bg-slate-700 px-2 py-1 rounded text-blue-300">{parameters.beamThickness} mm</span>
             </div>
             <input
               type="range"
-              min={1}
-              max={50}
-              step={0.5}
+              min={10}
+              max={200}
+              step={1}
               value={parameters.beamThickness}
               onChange={(e) => updateParameter('beamThickness', parseFloat(e.target.value))}
               className="w-full"
@@ -183,14 +195,14 @@ const ControlsPanel = ({ mobile = false, mode = 'default' }) => {
           
           <div className="mb-5">
             <div className="flex justify-between mb-2">
-              <label className="text-sm text-gray-300">Beam Depth</label>
-              <span className="text-sm font-mono bg-slate-700 px-2 py-1 rounded text-blue-300">{parameters.beamDepth}</span>
+              <label className="text-sm text-gray-300">Beam Depth (mm)</label>
+              <span className="text-sm font-mono bg-slate-700 px-2 py-1 rounded text-blue-300">{parameters.beamDepth} mm</span>
             </div>
             <input
               type="range"
-              min={1}
-              max={20}
-              step={0.5}
+              min={10}
+              max={300}
+              step={1}
               value={parameters.beamDepth}
               onChange={(e) => updateParameter('beamDepth', parseFloat(e.target.value))}
               className="w-full"

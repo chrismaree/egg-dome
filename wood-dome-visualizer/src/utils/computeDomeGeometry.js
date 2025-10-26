@@ -180,8 +180,8 @@ export function computeBeamIntersectionGeometry(params) {
     showInnerPolygon
   } = params
   
-  // Scale factor to normalize geometry to reasonable units (target polygon fits in ~10 unit radius)
-  const scaleFactor = 10 / s
+  // Scale factor to normalize geometry to reasonable units (target 10 unit radius for 3000mm side)
+  const scaleFactor = 10 / 3000
   
   // Calculate derived values
   const R = s / (2 * Math.sin(Math.PI / n))
@@ -243,8 +243,8 @@ export function computeBeamIntersectionGeometry(params) {
         },
         dimensions: {
           length: s * scaleFactor,
-          width: beamThickness * scaleFactor,
-          height: beamDepth * scaleFactor
+          width: beamThickness * scaleFactor,    // Scale beam thickness same as geometry
+          height: beamDepth * scaleFactor       // Scale beam depth same as geometry
         }
       })
     }

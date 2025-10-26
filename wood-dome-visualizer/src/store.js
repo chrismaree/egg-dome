@@ -24,14 +24,14 @@ const useStore = create((set, get) => ({
     
     // Beam intersection parameters
     n: 3,
-    s: 300,
+    s: 3000,  // 3m in mm
     K: 2,
     rows: 3,
     thetaMode: 'auto',
     thetaDeg: 0,
     layerHeight: 40,
-    beamThickness: 300 / 50,
-    beamDepth: 300 / 100,
+    beamThickness: 38,
+    beamDepth: 152,
     showIntersections: true,
     showPerpMarkers: false,
     showInnerPolygon: true,
@@ -113,14 +113,14 @@ const useStore = create((set, get) => ({
       
       // Beam intersection parameters
       n: 3,
-      s: 300,
+      s: 3000,  // 3m in mm
       K: 2,
       rows: 3,
       thetaMode: 'auto',
       thetaDeg: 0,
       layerHeight: 40,
-      beamThickness: 300 / 50,
-      beamDepth: 300 / 100,
+      beamThickness: 38,
+      beamDepth: 152,
       showIntersections: true,
       showPerpMarkers: false,
       showInnerPolygon: true,
