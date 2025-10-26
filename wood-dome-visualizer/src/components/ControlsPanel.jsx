@@ -21,8 +21,8 @@ const ControlsPanel = ({ mobile = false, mode = 'default' }) => {
     const identityCheck = Math.abs(2 * cEdge + mEdge - parameters.s) < 0.001
     
     return (
-      <div className={`${mobile ? 'w-full' : 'w-[380px]'}` } style={{backgroundColor: '#f5f5f5', padding: '16px'}}>
-        <div className="h-full overflow-y-auto" style={{backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', padding: '20px'}}>
+      <div className={`${mobile ? 'w-full' : 'w-[380px]'} h-full`} style={{backgroundColor: '#f5f5f5', padding: '16px'}}>
+        <div className="overflow-y-auto" style={{backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', padding: '20px', height: 'calc(100% - 0px)'}}>
           {/* Polygon Parameters */}
           <div className="mb-5">
             <h3 className="text-base font-semibold mb-4 text-[#333]">Polygon Parameters</h3>
@@ -283,35 +283,6 @@ const ControlsPanel = ({ mobile = false, mode = 'default' }) => {
             />
             <span className="text-sm text-[#666]">Show Axes</span>
           </label>
-          
-          <div className="mb-4">
-            <div className="flex items-center justify-between gap-4">
-              <label className="text-sm text-[#666]">Color Scheme</label>
-              <select
-                value={parameters.colorScheme}
-                onChange={(e) => updateParameter('colorScheme', e.target.value)}
-                className="px-3 py-1.5 rounded-md text-sm transition-all focus:outline-none"
-                style={{
-                  backgroundColor: 'white',
-                  border: '1px solid #dee2e6',
-                  color: '#495057',
-                  cursor: 'pointer',
-                  minWidth: '140px'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#28a745';
-                  e.target.style.boxShadow = '0 0 0 0.2rem rgba(40, 167, 69, 0.25)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#dee2e6';
-                  e.target.style.boxShadow = 'none';
-                }}
-              >
-                <option value="byLayer">By Layer</option>
-                <option value="byRole">By Role</option>
-              </select>
-            </div>
-          </div>
           </div>
           
           {/* Computed Values */}
@@ -392,35 +363,37 @@ const ControlsPanel = ({ mobile = false, mode = 'default' }) => {
   ]
 
   return (
-    <div className={`${mobile ? 'w-full' : 'w-[380px]'}`} style={{backgroundColor: '#f5f5f5', padding: '16px'}}>
-      <div className="h-full overflow-y-auto" style={{backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', padding: '20px'}}>
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={() => useStore.getState().resetParameters()}
-            className="text-xs px-3 py-1.5 font-medium transition-all"
-            style={{
-              backgroundColor: 'white',
-              border: '1px solid #dee2e6',
-              borderRadius: '6px',
-              color: '#495057',
-              cursor: 'pointer',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.backgroundColor = '#f8f9fa';
-              e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.08)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = 'white';
-              e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
-            }}
-          >
-            Reset to Defaults
-          </button>
-        </div>
+    <div className={`${mobile ? 'w-full' : 'w-[380px]'} h-full`} style={{backgroundColor: '#f5f5f5', padding: '16px'}}>
+      <div className="overflow-y-auto" style={{backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', padding: '20px', height: 'calc(100% - 0px)'}}>
         {sliderGroups.map((group, index) => (
           <div key={group.title} className="mb-5">
-            <h3 className="text-base font-semibold mb-4 text-[#333]">{group.title}</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-base font-semibold text-[#333]">{group.title}</h3>
+              {group.title === 'Dome Dimensions' && (
+                <button
+                  onClick={() => useStore.getState().resetParameters()}
+                  className="text-xs px-3 py-1.5 font-medium transition-all"
+                  style={{
+                    backgroundColor: 'white',
+                    border: '1px solid #dee2e6',
+                    borderRadius: '6px',
+                    color: '#495057',
+                    cursor: 'pointer',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.backgroundColor = '#f8f9fa';
+                    e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.08)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.backgroundColor = 'white';
+                    e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                  }}
+                >
+                  Reset
+                </button>
+              )}
+            </div>
           {group.controls.map(control => (
             <div key={control.name} className="mb-5">
               <div className="flex justify-between mb-2">

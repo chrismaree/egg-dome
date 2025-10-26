@@ -395,16 +395,24 @@ function Ground() {
   )
 }
 
-function BeamElement({ element, colorScheme, row, totalRows }) {
+function BeamElement({ element, row, totalRows }) {
   const color = useMemo(() => {
-    if (colorScheme === 'byLayer') {
-      // Pastel colors with higher lightness and lower saturation
-      const hue = (row / totalRows) * 360
-      return `hsl(${hue}, 50%, 75%)`  // Reduced saturation to 50%, increased lightness to 75%
-    } else {
-      return '#8B6F47'
-    }
-  }, [colorScheme, row, totalRows])
+    // Strong vibrant colors palette
+    const colors = [
+      '#eebe41', // Golden yellow
+      '#b05adc', // Purple
+      '#a2e85e', // Light green
+      '#7aa8e6', // Light blue
+      '#d25d4c', // Coral red
+      '#f39c12', // Orange
+      '#e74c3c', // Red
+      '#3498db', // Blue
+      '#2ecc71', // Green
+      '#9b59b6', // Violet
+    ]
+    const colorIndex = Math.floor((row / totalRows) * colors.length)
+    return colors[colorIndex % colors.length]
+  }, [row, totalRows])
   
   return (
     <mesh 
@@ -414,7 +422,13 @@ function BeamElement({ element, colorScheme, row, totalRows }) {
       receiveShadow
     >
       <boxGeometry args={[element.dimensions.length, element.dimensions.height, element.dimensions.width]} />
-      <meshStandardMaterial color={color} roughness={0.8} metalness={0.1} />
+      <meshStandardMaterial 
+        color={color} 
+        roughness={0.3} 
+        metalness={0} 
+        emissive={color}
+        emissiveIntensity={0.3}
+      />
     </mesh>
   )
 }
@@ -490,7 +504,6 @@ function BeamIntersectionStructure() {
             <BeamElement 
               key={element.id} 
               element={element} 
-              colorScheme={parameters.colorScheme}
               row={element.row}
               totalRows={parameters.rows}
             />

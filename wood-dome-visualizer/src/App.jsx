@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
 import ControlsPanel from './components/ControlsPanel'
 import DomeRenderer from './components/DomeRenderer'
 import DataTable from './components/DataTable'
 import SummaryPanel from './components/SummaryPanel'
 import ExportPanel from './components/ExportPanel'
 
-function App() {
-  const [activeTab, setActiveTab] = useState('builder')
+function AppContent() {
+  const location = useLocation()
   const [mobileTab, setMobileTab] = useState('3d') // '3d', 'controls', 'data'
   const [isMobile, setIsMobile] = useState(false)
   const [showModeMenu, setShowModeMenu] = useState(false)
+  
+  // Determine active tab from URL
+  const activeTab = location.pathname === '/intersections' ? 'intersections' : 
+                    location.pathname === '/visualizer' ? 'visualizer' : 'builder'
   
   useEffect(() => {
     const checkMobile = () => {
@@ -32,56 +37,63 @@ function App() {
   
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#f5f5f5', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif' }}>
-      <header style={{backgroundColor: '#f5f5f5', padding: '16px'}}>
-        <div style={{backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', padding: '24px', margin: '0 auto'}}>
-          <h1 className="text-2xl md:text-3xl font-semibold mb-4 text-[#333] flex items-center gap-3">
-            <span className="text-[#28a745]">✨</span>
-            Dream Catcher Calculator
-            <span className="text-[#28a745]">✨</span>
-          </h1>
-          
-          <nav className="flex items-center text-sm" style={{gap: '5px'}}>
-            {activeTab === 'builder' ? (
-              <span className="font-bold" style={{color: '#000'}}>Dome Builder</span>
-            ) : (
-              <a
-                href="#"
-                onClick={(e) => { e.preventDefault(); setActiveTab('builder') }}
-                className="text-[#2196f3] hover:text-[#1976d2] transition-colors underline"
-              >
-                Dome Builder
-              </a>
-            )}
-            
-            <span style={{color: '#ddd'}}>|</span>
-            
-            {activeTab === 'intersections' ? (
-              <span className="font-bold" style={{color: '#000'}}>Layer Interceptor</span>
-            ) : (
-              <a
-                href="#"
-                onClick={(e) => { e.preventDefault(); setActiveTab('intersections') }}
-                className="text-[#2196f3] hover:text-[#1976d2] transition-colors underline"
-              >
-                Layer Interceptor
-              </a>
-            )}
-            
-            <span style={{color: '#ddd'}}>|</span>
-            
-            {activeTab === 'visualizer' ? (
-              <span className="font-bold" style={{color: '#000'}}>Visualizer</span>
-            ) : (
-              <a
-                href="#"
-                onClick={(e) => { e.preventDefault(); setActiveTab('visualizer') }}
-                className="text-[#2196f3] hover:text-[#1976d2] transition-colors underline"
-              >
-                Visualizer
-              </a>
-            )}
-          </nav>
-          
+      <header style={{backgroundColor: '#f5f5f5', padding: '12px'}}>
+        <div style={{backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', padding: '12px', margin: '0 auto'}}>
+          <div className="flex items-center gap-6">
+            <img 
+              src="/image.png" 
+              alt="Dream Catcher" 
+              style={{
+                width: '90px',
+                height: '90px',
+                objectFit: 'contain'
+              }}
+            />
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-3xl font-semibold text-[#333]">
+                Dream Catcher Calculator
+              </h1>
+              
+              <nav className="flex items-center text-sm mt-2" style={{gap: '5px'}}>
+                {activeTab === 'builder' ? (
+                  <span className="font-bold" style={{color: '#000'}}>Dome Builder</span>
+                ) : (
+                  <Link
+                    to="/"
+                    className="text-[#2196f3] hover:text-[#1976d2] transition-colors underline"
+                  >
+                    Dome Builder
+                  </Link>
+                )}
+                
+                <span style={{color: '#ddd'}}>|</span>
+                
+                {activeTab === 'intersections' ? (
+                  <span className="font-bold" style={{color: '#000'}}>Layer Interceptor</span>
+                ) : (
+                  <Link
+                    to="/intersections"
+                    className="text-[#2196f3] hover:text-[#1976d2] transition-colors underline"
+                  >
+                    Layer Interceptor
+                  </Link>
+                )}
+                
+                <span style={{color: '#ddd'}}>|</span>
+                
+                {activeTab === 'visualizer' ? (
+                  <span className="font-bold" style={{color: '#000'}}>Visualizer</span>
+                ) : (
+                  <Link
+                    to="/visualizer"
+                    className="text-[#2196f3] hover:text-[#1976d2] transition-colors underline"
+                  >
+                    Visualizer
+                  </Link>
+                )}
+              </nav>
+            </div>
+          </div>
         </div>
       </header>
       
@@ -123,7 +135,8 @@ function App() {
         )}
         
         <div className="flex-1 flex overflow-hidden">
-          {activeTab === 'builder' ? (
+          <Routes>
+            <Route path="/" element={(
             isMobile ? (
               // Mobile Layout
               <div className="flex-1 flex flex-col">
@@ -165,14 +178,16 @@ function App() {
                 </div>
               </div>
             )
-          ) : activeTab === 'visualizer' ? (
+            )} />
+            <Route path="/visualizer" element={(
             // Visualizer Mode
             <div className="flex-1" style={{padding: '16px'}}>
               <div className="h-full overflow-hidden" style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
                 <DomeRenderer />
               </div>
             </div>
-          ) : (
+            )} />
+            <Route path="/intersections" element={(
             // Beam Intersections Mode
             <div className="flex-1 flex">
               <ControlsPanel mode="intersections" />
@@ -187,10 +202,20 @@ function App() {
                 </div>
               </div>
             </div>
-          )}
+            )} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </div>
       </main>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   )
 }
 
