@@ -444,7 +444,7 @@ function MarkerElement({ element }) {
 
 function PolylineElement({ element }) {
   const points = element.points.map(p => new THREE.Vector3(p.x, p.z, -p.y))
-  return <Line points={points} color="#ffff00" lineWidth={3} closed />
+  return <Line points={points} color="#ffff00" lineWidth={3} />
 }
 
 function BeamIntersectionStructure() {
