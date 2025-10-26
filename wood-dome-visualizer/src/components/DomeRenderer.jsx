@@ -1,9 +1,9 @@
 import React, { useRef, useMemo, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
+import { OrbitControls, PerspectiveCamera, Line, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import useStore from '../store'
-import { computeDomeGeometry, generateBoardPositions } from '../utils/computeDomeGeometry'
+import { computeDomeGeometry, generateBoardPositions, computeBeamIntersectionGeometry } from '../utils/computeDomeGeometry'
 
 function Board({ position, rotation, length, width = 0.114, thickness = 0.038, renderMode }) {
   const meshRef = useRef()
@@ -395,30 +395,155 @@ function Ground() {
   )
 }
 
-function CameraController({ view }) {
+function BeamElement({ element, colorScheme, row, totalRows }) {
+  const color = useMemo(() => {
+    if (colorScheme === 'byLayer') {
+      const hue = (row / totalRows) * 360
+      return `hsl(${hue}, 70%, 50%)`
+    } else {
+      return '#8B6F47'
+    }
+  }, [colorScheme, row, totalRows])
+  
+  return (
+    <mesh 
+      position={[element.position.x, element.position.z, -element.position.y]}
+      rotation={[0, element.rotation.z, 0]}
+      castShadow
+      receiveShadow
+    >
+      <boxGeometry args={[element.dimensions.length, element.dimensions.height, element.dimensions.width]} />
+      <meshStandardMaterial color={color} roughness={0.8} metalness={0.1} />
+    </mesh>
+  )
+}
+
+function MarkerElement({ element }) {
+  if (element.subtype === 'intercept') {
+    return (
+      <mesh position={[element.position.x, element.position.z, -element.position.y]}>
+        <sphereGeometry args={[0.1, 16, 16]} />
+        <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.5} />
+      </mesh>
+    )
+  }
+  
+  if (element.subtype === 'perpLine') {
+    const points = [
+      new THREE.Vector3(element.start.x, element.start.z, -element.start.y),
+      new THREE.Vector3(element.end.x, element.end.z, -element.end.y)
+    ]
+    return (
+      <Line points={points} color="#00ff00" lineWidth={2} />
+    )
+  }
+  
+  return null
+}
+
+function PolylineElement({ element }) {
+  const points = element.points.map(p => new THREE.Vector3(p.x, p.z, -p.y))
+  return <Line points={points} color="#ffff00" lineWidth={3} closed />
+}
+
+function BeamIntersectionStructure() {
+  const parameters = useStore(state => state.parameters)
+  const getThetaRad = useStore(state => state.getThetaRad)
+  const getMEdge = useStore(state => state.getMEdge)
+  const getCEdge = useStore(state => state.getCEdge)
+  const getDPerp = useStore(state => state.getDPerp)
+  
+  const geometryData = useMemo(() => {
+    const thetaRad = getThetaRad()
+    return computeBeamIntersectionGeometry({
+      n: parameters.n,
+      s: parameters.s,
+      K: parameters.K,
+      rows: parameters.rows,
+      thetaRad: thetaRad,
+      layerHeight: parameters.layerHeight,
+      beamThickness: parameters.beamThickness,
+      beamDepth: parameters.beamDepth,
+      showIntersections: parameters.showIntersections,
+      showPerpMarkers: parameters.showPerpMarkers,
+      showInnerPolygon: parameters.showInnerPolygon
+    })
+  }, [
+    parameters.n, parameters.s, parameters.K, parameters.rows,
+    parameters.layerHeight, parameters.beamThickness, parameters.beamDepth,
+    parameters.showIntersections, parameters.showPerpMarkers, parameters.showInnerPolygon,
+    getThetaRad
+  ])
+  
+  return (
+    <>
+      {geometryData.elementData.map((element) => {
+        if (element.type === 'beam') {
+          return (
+            <BeamElement 
+              key={element.id} 
+              element={element} 
+              colorScheme={parameters.colorScheme}
+              row={element.row}
+              totalRows={parameters.rows}
+            />
+          )
+        } else if (element.type === 'marker') {
+          return <MarkerElement key={element.id} element={element} />
+        } else if (element.type === 'polyline') {
+          return <PolylineElement key={element.id} element={element} />
+        }
+        return null
+      })}
+      
+      {/* Display overlay with calculations */}
+      <Html position={[-8, 5, 0]} style={{ width: '200px', pointerEvents: 'none' }}>
+        <div className="bg-black/80 text-white p-2 rounded text-xs">
+          <div>θ = {geometryData.meta.thetaDeg.toFixed(2)}°</div>
+          <div>m_edge = {geometryData.meta.mEdge.toFixed(2)}</div>
+          <div>c_edge = {geometryData.meta.cEdge.toFixed(2)}</div>
+          <div>d_perp = {geometryData.meta.dPerp.toFixed(2)}</div>
+        </div>
+      </Html>
+    </>
+  )
+}
+
+function CameraController({ view, mode = 'default' }) {
   const { camera } = useThree()
+  const parameters = useStore(state => state.parameters)
   
   useEffect(() => {
-    if (view === 'inside') {
+    if (mode === 'intersections') {
+      // Geometry is normalized, so use fixed camera position
+      camera.position.set(15, 10, 15)
+      const centerHeight = (parameters.rows * parameters.layerHeight * 10) / (2 * parameters.s)
+      camera.lookAt(0, centerHeight, 0)
+    } else if (view === 'inside') {
       camera.position.set(0, 1.7, 0)
       camera.lookAt(0, 2, -3)
     } else {
       camera.position.set(15, 12, 15)
       camera.lookAt(0, 3, 0)
     }
-  }, [view, camera])
+  }, [view, camera, mode, parameters.s, parameters.rows, parameters.layerHeight])
   
   return null
 }
 
-const DomeRenderer = () => {
+const DomeRenderer = ({ mode = 'default' }) => {
   const parameters = useStore(state => state.parameters)
+  
+  // For intersections mode, geometry is normalized to ~10 unit radius
+  const cameraPosition = mode === 'intersections' 
+    ? [15, 10, 15]  // Fixed position since geometry is normalized
+    : [10, 7, 10]
   
   return (
     <div className="relative w-full h-full bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-700">
       <Canvas shadows="soft">
-        <PerspectiveCamera makeDefault position={[10, 7, 10]} />
-        <CameraController view={parameters.cameraView} />
+        <PerspectiveCamera makeDefault position={cameraPosition} />
+        <CameraController view={parameters.cameraView} mode={mode} />
         
         <ambientLight intensity={0.25} color="#FFE4B5" />
         <directionalLight
@@ -428,14 +553,28 @@ const DomeRenderer = () => {
           castShadow={false}
         />
         
-        <DomeStructure />
-        <Ground />
+        {mode === 'intersections' ? (
+          <>
+            <BeamIntersectionStructure />
+            {parameters.gridOn && (
+              <gridHelper args={[20, 20]} position={[0, 0, 0]} />
+            )}
+            {parameters.axesOn && (
+              <axesHelper args={[5]} />
+            )}
+          </>
+        ) : (
+          <>
+            <DomeStructure />
+            <Ground />
+          </>
+        )}
         
         <OrbitControls
           enableDamping
           dampingFactor={0.05}
-          minDistance={2}
-          maxDistance={20}
+          minDistance={mode === 'intersections' ? 3 : 2}
+          maxDistance={mode === 'intersections' ? 50 : 20}
           maxPolarAngle={Math.PI / 2}
         />
       </Canvas>

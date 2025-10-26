@@ -164,3 +164,206 @@ export function generateBoardPositions(rowInfo, boardLength, boardThickness, ena
   
   return positions
 }
+
+export function computeBeamIntersectionGeometry(params) {
+  const {
+    n,
+    s,
+    K,
+    rows,
+    thetaRad,
+    layerHeight,
+    beamThickness,
+    beamDepth,
+    showIntersections,
+    showPerpMarkers,
+    showInnerPolygon
+  } = params
+  
+  // Scale factor to normalize geometry to reasonable units (target polygon fits in ~10 unit radius)
+  const scaleFactor = 10 / s
+  
+  // Calculate derived values
+  const R = s / (2 * Math.sin(Math.PI / n))
+  const a = s / (2 * Math.tan(Math.PI / n))
+  const cotN = 1 / Math.tan(Math.PI / n)
+  const mEdge = s * cotN * Math.tan(thetaRad / 2)
+  const cEdge = (s - mEdge) / 2
+  const dPerp = a * Math.tan(thetaRad / 2)
+  
+  const elementData = []
+  let elementId = 0
+  
+  // Generate base polygon vertices (scaled)
+  const phi0 = Math.PI / n // Start with one edge horizontal
+  const vertices = []
+  for (let i = 0; i < n; i++) {
+    const angle = phi0 + (2 * Math.PI * i) / n
+    vertices.push({
+      x: R * Math.cos(angle) * scaleFactor,
+      y: R * Math.sin(angle) * scaleFactor,
+      z: 0
+    })
+  }
+  
+  // Generate geometry for each row
+  for (let row = 0; row < rows; row++) {
+    const thetaRow = row * thetaRad
+    const z = row * layerHeight * scaleFactor
+    
+    // Generate beams for this row
+    for (let i = 0; i < n; i++) {
+      const v1 = vertices[i]
+      const v2 = vertices[(i + 1) % n]
+      
+      // Calculate edge midpoint and direction
+      const midX = (v1.x + v2.x) / 2
+      const midY = (v1.y + v2.y) / 2
+      const edgeAngle = Math.atan2(v2.y - v1.y, v2.x - v1.x)
+      
+      // Apply rotation for this row
+      const rotatedMidX = midX * Math.cos(thetaRow) - midY * Math.sin(thetaRow)
+      const rotatedMidY = midX * Math.sin(thetaRow) + midY * Math.cos(thetaRow)
+      const rotatedAngle = edgeAngle + thetaRow
+      
+      elementData.push({
+        id: elementId++,
+        type: 'beam',
+        row: row,
+        edgeIndex: i,
+        position: {
+          x: rotatedMidX,
+          y: rotatedMidY,
+          z: z
+        },
+        rotation: {
+          x: 0,
+          y: 0,
+          z: rotatedAngle
+        },
+        dimensions: {
+          length: s * scaleFactor,
+          width: beamThickness * scaleFactor,
+          height: beamDepth * scaleFactor
+        }
+      })
+    }
+    
+    // Generate intersection markers for this row
+    if (showIntersections && row > 0) {
+      const intersectionPoints = []
+      
+      for (let i = 0; i < n; i++) {
+        const v1 = vertices[i]
+        const v2 = vertices[(i + 1) % n]
+        
+        // Calculate intercept positions along edge
+        const t1 = cEdge / s
+        const t2 = 1 - cEdge / s
+        
+        // Interpolate positions
+        const p1 = {
+          x: v1.x + t1 * (v2.x - v1.x),
+          y: v1.y + t1 * (v2.y - v1.y),
+          z: 0
+        }
+        const p2 = {
+          x: v1.x + t2 * (v2.x - v1.x),
+          y: v1.y + t2 * (v2.y - v1.y),
+          z: 0
+        }
+        
+        // Apply rotation for this row
+        const rotP1X = p1.x * Math.cos(thetaRow) - p1.y * Math.sin(thetaRow)
+        const rotP1Y = p1.x * Math.sin(thetaRow) + p1.y * Math.cos(thetaRow)
+        const rotP2X = p2.x * Math.cos(thetaRow) - p2.y * Math.sin(thetaRow)
+        const rotP2Y = p2.x * Math.sin(thetaRow) + p2.y * Math.cos(thetaRow)
+        
+        // Add markers
+        elementData.push({
+          id: elementId++,
+          type: 'marker',
+          subtype: 'intercept',
+          row: row,
+          edgeIndex: i,
+          position: { x: rotP1X, y: rotP1Y, z: z }
+        })
+        
+        elementData.push({
+          id: elementId++,
+          type: 'marker',
+          subtype: 'intercept',
+          row: row,
+          edgeIndex: i,
+          position: { x: rotP2X, y: rotP2Y, z: z }
+        })
+        
+        intersectionPoints.push({ x: rotP1X, y: rotP1Y, z: z })
+        intersectionPoints.push({ x: rotP2X, y: rotP2Y, z: z })
+      }
+      
+      // Add inner polygon if enabled
+      if (showInnerPolygon && intersectionPoints.length > 0) {
+        elementData.push({
+          id: elementId++,
+          type: 'polyline',
+          row: row,
+          points: intersectionPoints
+        })
+      }
+    }
+    
+    // Add perpendicular markers if enabled
+    if (showPerpMarkers) {
+      for (let i = 0; i < n; i++) {
+        const v1 = vertices[i]
+        const v2 = vertices[(i + 1) % n]
+        
+        // Edge midpoint
+        const midX = (v1.x + v2.x) / 2
+        const midY = (v1.y + v2.y) / 2
+        
+        // Perpendicular direction (inward) - note vertices are already scaled
+        const edgeLength = Math.sqrt((v2.x - v1.x) ** 2 + (v2.y - v1.y) ** 2)
+        const perpX = -(v2.y - v1.y) / edgeLength
+        const perpY = (v2.x - v1.x) / edgeLength
+        
+        // Perpendicular marker position (scale dPerp)
+        const perpEndX = midX + perpX * dPerp * scaleFactor
+        const perpEndY = midY + perpY * dPerp * scaleFactor
+        
+        // Apply rotation
+        const rotMidX = midX * Math.cos(thetaRow) - midY * Math.sin(thetaRow)
+        const rotMidY = midX * Math.sin(thetaRow) + midY * Math.cos(thetaRow)
+        const rotPerpX = perpEndX * Math.cos(thetaRow) - perpEndY * Math.sin(thetaRow)
+        const rotPerpY = perpEndX * Math.sin(thetaRow) + perpEndY * Math.cos(thetaRow)
+        
+        elementData.push({
+          id: elementId++,
+          type: 'marker',
+          subtype: 'perpLine',
+          row: row,
+          edgeIndex: i,
+          start: { x: rotMidX, y: rotMidY, z: z },
+          end: { x: rotPerpX, y: rotPerpY, z: z }
+        })
+      }
+    }
+  }
+  
+  return {
+    totalElements: elementData.length,
+    elementData: elementData,
+    meta: {
+      thetaRad: thetaRad,
+      thetaDeg: (thetaRad * 180) / Math.PI,
+      mEdge: mEdge,
+      cEdge: cEdge,
+      dPerp: dPerp,
+      a: a,
+      R: R,
+      cosN: Math.cos(Math.PI / n),
+      cotN: cotN
+    }
+  }
+}

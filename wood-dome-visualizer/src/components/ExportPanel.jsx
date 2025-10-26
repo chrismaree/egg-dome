@@ -1,30 +1,70 @@
 import React, { useMemo } from 'react'
 import useStore from '../store'
-import { computeDomeGeometry } from '../utils/computeDomeGeometry'
+import { computeDomeGeometry, computeBeamIntersectionGeometry } from '../utils/computeDomeGeometry'
 import { computeCosts } from '../utils/computeCosts'
-import { exportToCSV, exportToJSON, exportCanvasAsImage, generateBOM, exportTo3D } from '../utils/exportUtils'
+import { 
+  exportToCSV, 
+  exportToJSON, 
+  exportCanvasAsImage, 
+  generateBOM, 
+  exportTo3D,
+  exportIntersectionCSV,
+  exportIntersectionJSON,
+  exportIntersectionSTL,
+  exportIntersectionPython
+} from '../utils/exportUtils'
 
-const ExportPanel = () => {
+const ExportPanel = ({ mode = 'default' }) => {
   const parameters = useStore(state => state.parameters)
+  const getThetaRad = useStore(state => state.getThetaRad)
   
-  const { geometry, costs } = useMemo(() => {
-    const geo = computeDomeGeometry(parameters)
-    const cost = computeCosts(parameters, geo.totalBoards)
-    return { geometry: geo, costs: cost }
-  }, [parameters])
+  const { geometry, costs, intersectionGeometry } = useMemo(() => {
+    if (mode === 'intersections') {
+      const thetaRad = getThetaRad()
+      const intGeo = computeBeamIntersectionGeometry({
+        n: parameters.n,
+        s: parameters.s,
+        K: parameters.K,
+        rows: parameters.rows,
+        thetaRad: thetaRad,
+        layerHeight: parameters.layerHeight,
+        beamThickness: parameters.beamThickness,
+        beamDepth: parameters.beamDepth,
+        showIntersections: parameters.showIntersections,
+        showPerpMarkers: parameters.showPerpMarkers,
+        showInnerPolygon: parameters.showInnerPolygon
+      })
+      return { geometry: null, costs: null, intersectionGeometry: intGeo }
+    } else {
+      const geo = computeDomeGeometry(parameters)
+      const cost = computeCosts(parameters, geo.totalBoards)
+      return { geometry: geo, costs: cost, intersectionGeometry: null }
+    }
+  }, [parameters, mode, getThetaRad])
   
   const handleCSVExport = () => {
-    exportToCSV(geometry.rowData, parameters, costs)
+    if (mode === 'intersections') {
+      exportIntersectionCSV(intersectionGeometry, parameters)
+    } else {
+      exportToCSV(geometry.rowData, parameters, costs)
+    }
   }
   
   const handleJSONExport = () => {
-    exportToJSON(parameters, geometry, costs)
+    if (mode === 'intersections') {
+      exportIntersectionJSON(intersectionGeometry, parameters)
+    } else {
+      exportToJSON(parameters, geometry, costs)
+    }
   }
   
   const handleImageExport = () => {
     const canvas = document.querySelector('canvas')
     if (canvas) {
-      exportCanvasAsImage(canvas, `dome-${new Date().toISOString().split('T')[0]}.png`)
+      const filename = mode === 'intersections' 
+        ? `beam-intersections-${new Date().toISOString().split('T')[0]}.png`
+        : `dome-${new Date().toISOString().split('T')[0]}.png`
+      exportCanvasAsImage(canvas, filename)
     }
   }
   
@@ -33,14 +73,28 @@ const ExportPanel = () => {
   }
   
   const handleSTLExport = () => {
-    exportTo3D(parameters, geometry, 'stl')
+    if (mode === 'intersections') {
+      exportIntersectionSTL(intersectionGeometry, parameters)
+    } else {
+      exportTo3D(parameters, geometry, 'stl')
+    }
   }
   
   const handleFusion360Export = () => {
     exportTo3D(parameters, geometry, 'fusion360')
   }
   
-  const exportButtons = [
+  const handlePythonExport = () => {
+    exportIntersectionPython(intersectionGeometry, parameters)
+  }
+  
+  const exportButtons = mode === 'intersections' ? [
+    { label: 'Export CSV', icon: '📊', onClick: handleCSVExport, color: 'bg-green-500 hover:bg-green-600' },
+    { label: 'Export JSON', icon: '🧮', onClick: handleJSONExport, color: 'bg-purple-500 hover:bg-purple-600' },
+    { label: 'Save Image', icon: '📸', onClick: handleImageExport, color: 'bg-blue-500 hover:bg-blue-600' },
+    { label: 'Export STL', icon: '🔧', onClick: handleSTLExport, color: 'bg-indigo-500 hover:bg-indigo-600' },
+    { label: 'Python Template', icon: '🐍', onClick: handlePythonExport, color: 'bg-purple-600 hover:bg-purple-700' }
+  ] : [
     { label: 'Export CSV', icon: '📊', onClick: handleCSVExport, color: 'bg-green-500 hover:bg-green-600' },
     { label: 'Export JSON', icon: '🧮', onClick: handleJSONExport, color: 'bg-purple-500 hover:bg-purple-600' },
     { label: 'Save Image', icon: '📸', onClick: handleImageExport, color: 'bg-blue-500 hover:bg-blue-600' },

@@ -281,3 +281,204 @@ export function exportTo3D(params, geometry, format = 'stl') {
     exportToFusion360Script(params, geometry)
   }
 }
+
+export function exportIntersectionCSV(intersectionGeometry, params) {
+  const lines = ['type,row,edgeIndex,centerX,centerY,centerZ,rotZ,length,width,height']
+  
+  // Export beams
+  intersectionGeometry.elementData.forEach((element) => {
+    if (element.type === 'beam') {
+      lines.push([
+        'beam',
+        element.row,
+        element.edgeIndex,
+        element.position.x.toFixed(3),
+        element.position.y.toFixed(3),
+        element.position.z.toFixed(3),
+        element.rotation.z.toFixed(4),
+        element.dimensions.length.toFixed(3),
+        element.dimensions.width.toFixed(3),
+        element.dimensions.height.toFixed(3)
+      ].join(','))
+    }
+  })
+  
+  // Add intersection data
+  lines.push('')
+  lines.push('type,row,edgeIndex,x,y,z,note')
+  
+  intersectionGeometry.elementData.forEach((element) => {
+    if (element.type === 'marker' && element.subtype === 'intercept') {
+      lines.push([
+        'intersection',
+        element.row,
+        element.edgeIndex,
+        element.position.x.toFixed(3),
+        element.position.y.toFixed(3),
+        element.position.z.toFixed(3),
+        'intercept_point'
+      ].join(','))
+    }
+  })
+  
+  // Add summary
+  lines.push('')
+  lines.push('Summary')
+  lines.push(`n,${params.n}`)
+  lines.push(`s,${params.s}`)
+  lines.push(`K,${params.K}`)
+  lines.push(`theta_deg,${intersectionGeometry.meta.thetaDeg.toFixed(2)}`)
+  lines.push(`m_edge,${intersectionGeometry.meta.mEdge.toFixed(3)}`)
+  lines.push(`c_edge,${intersectionGeometry.meta.cEdge.toFixed(3)}`)
+  lines.push(`d_perp,${intersectionGeometry.meta.dPerp.toFixed(3)}`)
+  
+  const csvContent = lines.join('\n')
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  saveAs(blob, `beam-intersections-${new Date().toISOString().split('T')[0]}.csv`)
+}
+
+export function exportIntersectionJSON(intersectionGeometry, params) {
+  const exportData = {
+    timestamp: new Date().toISOString(),
+    parameters: {
+      n: params.n,
+      s: params.s,
+      K: params.K,
+      rows: params.rows,
+      thetaMode: params.thetaMode,
+      thetaDeg: params.thetaDeg,
+      layerHeight: params.layerHeight,
+      beamThickness: params.beamThickness,
+      beamDepth: params.beamDepth
+    },
+    meta: intersectionGeometry.meta,
+    elementData: intersectionGeometry.elementData,
+    totalElements: intersectionGeometry.totalElements
+  }
+  
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+  saveAs(blob, `beam-intersections-${new Date().toISOString().split('T')[0]}.json`)
+}
+
+export function exportIntersectionSTL(intersectionGeometry, params) {
+  const geometries = []
+  
+  // Create geometries for beams only
+  intersectionGeometry.elementData.forEach((element) => {
+    if (element.type === 'beam') {
+      const geometry = new THREE.BoxGeometry(
+        element.dimensions.length,
+        element.dimensions.height,
+        element.dimensions.width
+      )
+      
+      // Apply transformations
+      const matrix = new THREE.Matrix4()
+      matrix.makeRotationZ(element.rotation.z)
+      matrix.setPosition(element.position.x, element.position.z, -element.position.y)
+      geometry.applyMatrix4(matrix)
+      
+      geometries.push(geometry)
+    }
+  })
+  
+  if (geometries.length === 0) {
+    console.error('No beams to export')
+    return
+  }
+  
+  // Merge all geometries
+  const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries)
+  
+  // Export to STL
+  const exporter = new STLExporter()
+  const stlString = exporter.parse(mergedGeometry)
+  const blob = new Blob([stlString], { type: 'application/octet-stream' })
+  saveAs(blob, `beam-intersections-${new Date().toISOString().split('T')[0]}.stl`)
+}
+
+export function exportIntersectionPython(intersectionGeometry, params) {
+  const pythonTemplate = `#!/usr/bin/env python3
+"""
+Beam Intersection Parameters
+Generated: ${new Date().toISOString()}
+"""
+
+# Polygon parameters
+n = ${params.n}  # Number of sides
+s = ${params.s}  # Side length
+K = ${params.K}  # Periodic re-alignment period
+
+# Computed values
+theta_rad = ${intersectionGeometry.meta.thetaRad}
+theta_deg = ${intersectionGeometry.meta.thetaDeg}
+m_edge = ${intersectionGeometry.meta.mEdge}
+c_edge = ${intersectionGeometry.meta.cEdge}
+d_perp = ${intersectionGeometry.meta.dPerp}
+a = ${intersectionGeometry.meta.a}  # Apothem
+R = ${intersectionGeometry.meta.R}  # Circumradius
+cos_n = ${intersectionGeometry.meta.cosN}
+cot_n = ${intersectionGeometry.meta.cotN}
+
+# Beam dimensions
+layer_height = ${params.layerHeight}
+beam_thickness = ${params.beamThickness}
+beam_depth = ${params.beamDepth}
+rows = ${params.rows}
+
+# Verification
+print(f"n = {n}, s = {s}, K = {K}")
+print(f"theta = {theta_deg:.2f}°")
+print(f"m_edge = {m_edge:.3f}")
+print(f"c_edge = {c_edge:.3f}")
+print(f"d_perp = {d_perp:.3f}")
+print(f"Identity check: 2c + m = {2*c_edge + m_edge:.3f} (should be {s})")
+
+# Example: Generate beam positions
+import math
+
+def generate_beams():
+    phi0 = math.pi / n
+    vertices = []
+    for i in range(n):
+        angle = phi0 + (2 * math.pi * i) / n
+        vertices.append({
+            'x': R * math.cos(angle),
+            'y': R * math.sin(angle)
+        })
+    
+    beams = []
+    for row in range(rows):
+        theta_row = row * theta_rad
+        z = row * layer_height
+        
+        for i in range(n):
+            v1 = vertices[i]
+            v2 = vertices[(i + 1) % n]
+            
+            # Edge midpoint
+            mid_x = (v1['x'] + v2['x']) / 2
+            mid_y = (v1['y'] + v2['y']) / 2
+            
+            # Apply rotation
+            rot_x = mid_x * math.cos(theta_row) - mid_y * math.sin(theta_row)
+            rot_y = mid_x * math.sin(theta_row) + mid_y * math.cos(theta_row)
+            
+            beams.append({
+                'row': row,
+                'edge': i,
+                'x': rot_x,
+                'y': rot_y,
+                'z': z
+            })
+    
+    return beams
+
+if __name__ == "__main__":
+    beams = generate_beams()
+    print(f"\\nGenerated {len(beams)} beams")
+`
+  
+  const blob = new Blob([pythonTemplate], { type: 'text/plain;charset=utf-8;' })
+  saveAs(blob, `beam-intersections-params-${new Date().toISOString().split('T')[0]}.py`)
+}
