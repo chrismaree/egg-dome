@@ -436,7 +436,7 @@ function BeamElement({ element, row, totalRows }) {
 function MarkerElement({ element }) {
   if (element.subtype === 'intercept') {
     // Blue for intersections from below, red for intersections from above
-    const color = element.markerType === 'below' ? '#0000ff' : '#ff0000'
+    const color = element.markerType === 'above' ? '#ff0000' : '#0000ff'
     return (
       <mesh position={[element.position.x, element.position.z, -element.position.y]}>
         <sphereGeometry args={[0.1, 16, 16]} />

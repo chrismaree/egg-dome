@@ -190,6 +190,8 @@ export function computeBeamIntersectionGeometry(params) {
   const mEdge = s * cotN * Math.tan(thetaRad / 2)
   const cEdge = (s - mEdge) / 2
   const dPerp = a * Math.tan(thetaRad / 2)
+  const beamHalfHeight = (beamDepth * scaleFactor) / 2
+  const markerVisualOffset = 0.01 // small offset in world units to keep markers visible outside the beam skin
   
   const elementData = []
   let elementId = 0
@@ -205,6 +207,73 @@ export function computeBeamIntersectionGeometry(params) {
       z: 0
     })
   }
+
+  const EPS = 1e-9
+
+  const rotateWithSinCos = (vertex, cosAngle, sinAngle) => ({
+    x: vertex.x * cosAngle - vertex.y * sinAngle,
+    y: vertex.x * sinAngle + vertex.y * cosAngle,
+    z: vertex.z
+  })
+
+  const getRotatedVertices = (angle) => {
+    const cosAngle = Math.cos(angle)
+    const sinAngle = Math.sin(angle)
+    return vertices.map((vertex) => rotateWithSinCos(vertex, cosAngle, sinAngle))
+  }
+
+  const segmentIntersection = (p1, p2, p3, p4) => {
+    const rX = p2.x - p1.x
+    const rY = p2.y - p1.y
+    const sX = p4.x - p3.x
+    const sY = p4.y - p3.y
+    const denom = rX * sY - rY * sX
+
+    if (Math.abs(denom) < EPS) {
+      return null
+    }
+
+    const qpX = p3.x - p1.x
+    const qpY = p3.y - p1.y
+    const t = (qpX * sY - qpY * sX) / denom
+    const u = (qpX * rY - qpY * rX) / denom
+
+    if (t < -EPS || t > 1 + EPS || u < -EPS || u > 1 + EPS) {
+      return null
+    }
+
+    return {
+      x: p1.x + t * rX,
+      y: p1.y + t * rY,
+      t: Math.max(0, Math.min(1, t))
+    }
+  }
+
+  const collectIntersections = (edgeStart, edgeEnd, otherVertices, markerType, neighborRow) => {
+    const results = []
+
+    for (let j = 0; j < n; j++) {
+      const otherStart = otherVertices[j]
+      const otherEnd = otherVertices[(j + 1) % n]
+      const intersection = segmentIntersection(edgeStart, edgeEnd, otherStart, otherEnd)
+
+      if (intersection) {
+        const exists = results.some(existing => Math.abs(existing.t - intersection.t) < 1e-6)
+        if (!exists) {
+          results.push({
+            x: intersection.x,
+            y: intersection.y,
+            t: intersection.t,
+            markerType,
+            neighborEdgeIndex: j,
+            neighborRow
+          })
+        }
+      }
+    }
+
+    return results
+  }
   
   // Add vertical offset to raise the whole geometry by half layer height
   const verticalOffset = (layerHeight / 2) * scaleFactor
@@ -213,6 +282,8 @@ export function computeBeamIntersectionGeometry(params) {
   for (let row = 0; row < rows; row++) {
     const thetaRow = row * thetaRad
     const z = (row * layerHeight * scaleFactor) + verticalOffset
+    const cosRow = Math.cos(thetaRow)
+    const sinRow = Math.sin(thetaRow)
     
     // Generate beams for this row
     for (let i = 0; i < n; i++) {
@@ -254,74 +325,72 @@ export function computeBeamIntersectionGeometry(params) {
     
     // Generate intersection markers for this row (including bottom row)
     if (showIntersections || showInnerPolygon) {
-      const intersectionPoints = []
-      
+      const polygonPoints = []
+      const interceptOffset = cEdge / s
+      const currentVertices = showIntersections ? getRotatedVertices(thetaRow) : null
+      const hasPrev = showIntersections && row > 0
+      const hasNext = showIntersections && row < rows - 1
+      const prevVertices = hasPrev ? getRotatedVertices(thetaRow - thetaRad) : null
+      const nextVertices = hasNext ? getRotatedVertices(thetaRow + thetaRad) : null
+
       for (let i = 0; i < n; i++) {
-        const v1 = vertices[i]
-        const v2 = vertices[(i + 1) % n]
-        
-        // Use the correct parameter form but fix the rotation issue
-        // Calculate intercept positions along edge using c_edge parameter
-        const t1 = cEdge / s
-        const t2 = 1 - cEdge / s
-        
-        // Interpolate positions along the base edge
-        const p1 = {
-          x: v1.x + t1 * (v2.x - v1.x),
-          y: v1.y + t1 * (v2.y - v1.y),
-          z: 0
+        if (showInnerPolygon) {
+          const v1 = vertices[i]
+          const v2 = vertices[(i + 1) % n]
+          const baseX = v1.x + interceptOffset * (v2.x - v1.x)
+          const baseY = v1.y + interceptOffset * (v2.y - v1.y)
+          const rotX = baseX * cosRow - baseY * sinRow
+          const rotY = baseX * sinRow + baseY * cosRow
+          polygonPoints.push({ x: rotX, y: rotY, z: z })
         }
-        const p2 = {
-          x: v1.x + t2 * (v2.x - v1.x),
-          y: v1.y + t2 * (v2.y - v1.y),
-          z: 0
-        }
-        
-        // Apply rotation for this row - the key fix is here
-        // Each row rotates by thetaRow = row * thetaRad in a CLOCKWISE spiral
-        const rotP1X = p1.x * Math.cos(thetaRow) - p1.y * Math.sin(thetaRow)
-        const rotP1Y = p1.x * Math.sin(thetaRow) + p1.y * Math.cos(thetaRow)
-        const rotP2X = p2.x * Math.cos(thetaRow) - p2.y * Math.sin(thetaRow)
-        const rotP2Y = p2.x * Math.sin(thetaRow) + p2.y * Math.cos(thetaRow)
-        
-        // Add markers if showIntersections is enabled
+
         if (showIntersections) {
-          elementData.push({
-            id: elementId++,
-            type: 'marker',
-            subtype: 'intercept',
-            row: row,
-            edgeIndex: i,
-            position: { x: rotP1X, y: rotP1Y, z: z }
-          })
-          
-          elementData.push({
-            id: elementId++,
-            type: 'marker',
-            subtype: 'intercept',
-            row: row,
-            edgeIndex: i,
-            position: { x: rotP2X, y: rotP2Y, z: z }
-          })
+          const intersections = []
+          const edgeStart = currentVertices[i]
+          const edgeEnd = currentVertices[(i + 1) % n]
+
+          if (hasPrev) {
+            intersections.push(
+              ...collectIntersections(edgeStart, edgeEnd, prevVertices, 'below', row - 1)
+            )
+          }
+
+          if (hasNext) {
+            intersections.push(
+              ...collectIntersections(edgeStart, edgeEnd, nextVertices, 'above', row + 1)
+            )
+          }
+
+          intersections
+            .sort((a, b) => a.t - b.t)
+            .forEach((intersection) => {
+              elementData.push({
+                id: elementId++,
+                type: 'marker',
+                subtype: 'intercept',
+                row: row,
+                edgeIndex: i,
+                markerType: intersection.markerType,
+                neighborRow: intersection.neighborRow,
+                neighborEdgeIndex: intersection.neighborEdgeIndex,
+                position: {
+                  x: intersection.x,
+                  y: intersection.y,
+                  z: intersection.markerType === 'above'
+                    ? z + beamHalfHeight + markerVisualOffset
+                    : z - beamHalfHeight - markerVisualOffset
+                }
+              })
+            })
         }
-        
-        intersectionPoints.push({ x: rotP1X, y: rotP1Y, z: z })
-        intersectionPoints.push({ x: rotP2X, y: rotP2Y, z: z })
       }
-      
-      // Add inner polygon if enabled
-      if (showInnerPolygon && intersectionPoints.length > 0) {
-        // Create inner polygon by connecting only the first intersection point from each edge
-        const innerPolygonPoints = []
-        for (let i = 0; i < intersectionPoints.length; i += 2) {
-          innerPolygonPoints.push(intersectionPoints[i])
-        }
-        
+
+      if (showInnerPolygon && polygonPoints.length > 0) {
         elementData.push({
           id: elementId++,
           type: 'polyline',
           row: row,
-          points: innerPolygonPoints
+          points: polygonPoints
         })
       }
     }
