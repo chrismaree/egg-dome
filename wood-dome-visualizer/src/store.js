@@ -77,6 +77,7 @@ const useStore = create((set, get) => ({
   },
   
   getDPerp: () => {
+    const params = get().parameters
     const a = get().getA()
     const thetaRad = get().getThetaRad()
     return a * Math.tan(thetaRad / 2)

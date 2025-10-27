@@ -96,56 +96,6 @@ const ControlsPanel = ({ mobile = false, mode = 'default' }) => {
           </div>
           </div>
           
-          {/* Rotation Control */}
-          <div className="mb-5">
-            <h3 className="text-base font-semibold mb-4 text-[#333]">Rotation Control</h3>
-          
-          <div className="mb-4">
-            <label className="text-sm text-[#666] block mb-2">Theta Mode</label>
-            <div className="flex gap-4">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="radio"
-                  value="auto"
-                  checked={parameters.thetaMode === 'auto'}
-                  onChange={() => updateParameter('thetaMode', 'auto')}
-                  className="mr-2 w-4 h-4 text-[#28a745] focus:ring-[#28a745] focus:ring-2"
-                />
-                <span className="text-sm text-[#333]">Auto</span>
-              </label>
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="radio"
-                  value="custom"
-                  checked={parameters.thetaMode === 'custom'}
-                  onChange={() => updateParameter('thetaMode', 'custom')}
-                  className="mr-2 w-4 h-4 text-[#28a745] focus:ring-[#28a745] focus:ring-2"
-                />
-                <span className="text-sm text-[#333]">Custom</span>
-              </label>
-            </div>
-          </div>
-          
-          {parameters.thetaMode === 'custom' && (
-            <div className="mb-4">
-              <div className="flex justify-between mb-2">
-                <label className="text-sm text-[#666]">Theta (degrees)</label>
-                <span className="text-sm font-mono px-2 py-1 rounded text-[#666]" style={{backgroundColor: 'transparent'}}>{parameters.thetaDeg}°</span>
-              </div>
-              <input
-                type="range"
-                min={0.1}
-                max={180 / parameters.n - 0.1}
-                step={0.1}
-                value={parameters.thetaDeg}
-                onChange={(e) => updateParameter('thetaDeg', parseFloat(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                style={{accentColor: '#28a745'}}
-              />
-            </div>
-          )}
-          </div>
-          
           {/* Beam Dimensions */}
           <div className="mb-5">
             <div className="flex justify-between items-center mb-4">

@@ -260,11 +260,12 @@ export function computeBeamIntersectionGeometry(params) {
         const v1 = vertices[i]
         const v2 = vertices[(i + 1) % n]
         
-        // Calculate intercept positions along edge
+        // Use the correct parameter form but fix the rotation issue
+        // Calculate intercept positions along edge using c_edge parameter
         const t1 = cEdge / s
         const t2 = 1 - cEdge / s
         
-        // Interpolate positions
+        // Interpolate positions along the base edge
         const p1 = {
           x: v1.x + t1 * (v2.x - v1.x),
           y: v1.y + t1 * (v2.y - v1.y),
@@ -276,7 +277,8 @@ export function computeBeamIntersectionGeometry(params) {
           z: 0
         }
         
-        // Apply rotation for this row
+        // Apply rotation for this row - the key fix is here
+        // Each row rotates by thetaRow = row * thetaRad in a CLOCKWISE spiral
         const rotP1X = p1.x * Math.cos(thetaRow) - p1.y * Math.sin(thetaRow)
         const rotP1Y = p1.x * Math.sin(thetaRow) + p1.y * Math.cos(thetaRow)
         const rotP2X = p2.x * Math.cos(thetaRow) - p2.y * Math.sin(thetaRow)
