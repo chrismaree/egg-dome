@@ -458,6 +458,30 @@ function MarkerElement({ element }) {
   return null
 }
 
+function LabelElement({ element }) {
+  return (
+    <Html
+      position={[element.position.x, element.position.z, -element.position.y]}
+      center
+      distanceFactor={10}
+    >
+      <div
+        style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          color: '#fff',
+          fontSize: '11px',
+          padding: '4px 8px',
+          borderRadius: '6px',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none'
+        }}
+      >
+        {element.text}
+      </div>
+    </Html>
+  )
+}
+
 function PolylineElement({ element }) {
   const points = element.points.map(p => new THREE.Vector3(p.x, p.z, -p.y))
   
@@ -489,12 +513,14 @@ function BeamIntersectionStructure() {
       beamDepth: parameters.beamDepth,
       showIntersections: parameters.showIntersections,
       showPerpMarkers: parameters.showPerpMarkers,
-      showInnerPolygon: parameters.showInnerPolygon
+      showInnerPolygon: parameters.showInnerPolygon,
+      showCutLabels: parameters.showCutLabels
     })
   }, [
     parameters.n, parameters.s, parameters.K, parameters.rows,
     parameters.layerHeight, parameters.beamThickness, parameters.beamDepth,
     parameters.showIntersections, parameters.showPerpMarkers, parameters.showInnerPolygon,
+    parameters.showCutLabels,
     getThetaRad
   ])
   
@@ -511,6 +537,8 @@ function BeamIntersectionStructure() {
           )
         } else if (element.type === 'marker') {
           return <MarkerElement key={element.id} element={element} />
+        } else if (element.type === 'label') {
+          return <LabelElement key={element.id} element={element} />
         } else if (element.type === 'polyline') {
           return <PolylineElement key={element.id} element={element} />
         }

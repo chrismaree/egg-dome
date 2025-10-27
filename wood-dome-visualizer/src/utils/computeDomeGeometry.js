@@ -177,7 +177,8 @@ export function computeBeamIntersectionGeometry(params) {
     beamDepth,
     showIntersections,
     showPerpMarkers,
-    showInnerPolygon
+    showInnerPolygon,
+    showCutLabels = false
   } = params
   
   // Scale factor to normalize geometry to reasonable units (target 10 unit radius for 3000mm side)
@@ -324,12 +325,13 @@ export function computeBeamIntersectionGeometry(params) {
     }
     
     // Generate intersection markers for this row (including bottom row)
-    if (showIntersections || showInnerPolygon) {
+    const needIntersections = showIntersections || showCutLabels
+    if (showIntersections || showInnerPolygon || showCutLabels) {
       const polygonPoints = []
       const interceptOffset = cEdge / s
-      const currentVertices = showIntersections ? getRotatedVertices(thetaRow) : null
-      const hasPrev = showIntersections && row > 0
-      const hasNext = showIntersections && row < rows - 1
+      const currentVertices = needIntersections ? getRotatedVertices(thetaRow) : null
+      const hasPrev = needIntersections && row > 0
+      const hasNext = needIntersections && row < rows - 1
       const prevVertices = hasPrev ? getRotatedVertices(thetaRow - thetaRad) : null
       const nextVertices = hasNext ? getRotatedVertices(thetaRow + thetaRad) : null
 
@@ -344,10 +346,13 @@ export function computeBeamIntersectionGeometry(params) {
           polygonPoints.push({ x: rotX, y: rotY, z: z })
         }
 
-        if (showIntersections) {
-          const intersections = []
-          const edgeStart = currentVertices[i]
-          const edgeEnd = currentVertices[(i + 1) % n]
+        const intersections = []
+        let edgeStart = null
+        let edgeEnd = null
+
+        if (needIntersections) {
+          edgeStart = currentVertices[i]
+          edgeEnd = currentVertices[(i + 1) % n]
 
           if (hasPrev) {
             intersections.push(
@@ -360,7 +365,9 @@ export function computeBeamIntersectionGeometry(params) {
               ...collectIntersections(edgeStart, edgeEnd, nextVertices, 'above', row + 1)
             )
           }
+        }
 
+        if (showIntersections && intersections.length > 0) {
           intersections
             .sort((a, b) => a.t - b.t)
             .forEach((intersection) => {
@@ -382,6 +389,55 @@ export function computeBeamIntersectionGeometry(params) {
                 }
               })
             })
+        }
+
+        if (
+          showCutLabels &&
+          intersections.length > 0 &&
+          rows > 2 &&
+          row === rows - 2 &&
+          edgeStart &&
+          edgeEnd
+        ) {
+          const sortedIntersections = [...intersections].sort((a, b) => a.t - b.t)
+          const tangentX = edgeEnd.x - edgeStart.x
+          const tangentY = edgeEnd.y - edgeStart.y
+          const edgeLengthPlan = Math.hypot(tangentX, tangentY) || EPS
+          const unitTangent = {
+            x: tangentX / edgeLengthPlan,
+            y: tangentY / edgeLengthPlan
+          }
+          const labelSpacing = 0.2
+          const typeTotals = { above: 0, below: 0 }
+          sortedIntersections.forEach(intersection => {
+            typeTotals[intersection.markerType] = (typeTotals[intersection.markerType] || 0) + 1
+          })
+          const typeCounters = { above: 0, below: 0 }
+
+          sortedIntersections.forEach((intersection) => {
+            const type = intersection.markerType
+            const total = typeTotals[type] || 1
+            const count = typeCounters[type] || 0
+            const centerIndex = (total - 1) / 2
+            const alongOffset = (count - centerIndex) * labelSpacing
+            typeCounters[type] = count + 1
+
+            const baseX = intersection.x + unitTangent.x * alongOffset
+            const baseY = intersection.y + unitTangent.y * alongOffset
+            const verticalSign = type === 'above' ? 1 : -1
+            const labelZ = z + verticalSign * (beamHalfHeight + markerVisualOffset + 0.12)
+
+            elementData.push({
+              id: elementId++,
+              type: 'label',
+              subtype: 'cutDistance',
+              row: row,
+              edgeIndex: i,
+              markerType: type,
+              text: `${type === 'above' ? 'Top' : 'Bottom'} ${(intersection.t * s).toFixed(0)} mm`,
+              position: { x: baseX, y: baseY, z: labelZ }
+            })
+          })
         }
       }
 

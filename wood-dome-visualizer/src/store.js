@@ -35,6 +35,7 @@ const useStore = create((set, get) => ({
     showIntersections: true,
     showPerpMarkers: false,
     showInnerPolygon: true,
+    showCutLabels: false,
     colorScheme: 'byLayer',
     gridOn: true,
     axesOn: false
@@ -125,6 +126,7 @@ const useStore = create((set, get) => ({
       showIntersections: true,
       showPerpMarkers: false,
       showInnerPolygon: true,
+      showCutLabels: false,
       colorScheme: 'byLayer',
       gridOn: true,
       axesOn: false

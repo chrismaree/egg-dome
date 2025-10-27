@@ -32,7 +32,8 @@ const ExportPanel = ({ mode = 'default' }) => {
         beamDepth: parameters.beamDepth,
         showIntersections: parameters.showIntersections,
         showPerpMarkers: parameters.showPerpMarkers,
-        showInnerPolygon: parameters.showInnerPolygon
+        showInnerPolygon: parameters.showInnerPolygon,
+        showCutLabels: parameters.showCutLabels
       })
       return { geometry: null, costs: null, intersectionGeometry: intGeo }
     } else {
