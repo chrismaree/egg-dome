@@ -5,6 +5,7 @@ import DomeRenderer from './components/DomeRenderer'
 import DataTable from './components/DataTable'
 import SummaryPanel from './components/SummaryPanel'
 import ExportPanel from './components/ExportPanel'
+import BeamPropertiesPanel from './components/BeamPropertiesPanel'
 
 function AppContent() {
   const location = useLocation()
@@ -196,7 +197,8 @@ function AppContent() {
                   <div className="flex-1 overflow-hidden" style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
                     <DomeRenderer mode="intersections" />
                   </div>
-                  <div className="w-[420px] overflow-y-auto pr-2">
+                  <div className="w-[420px] overflow-y-auto pr-2" style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+                    <BeamPropertiesPanel />
                     <ExportPanel mode="intersections" />
                   </div>
                 </div>

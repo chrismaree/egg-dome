@@ -43,7 +43,7 @@ const ControlsPanel = ({ mobile = false, mode = 'default' }) => {
               style={{accentColor: '#28a745'}}
             />
           </div>
-          
+
           <div className="mb-4">
             <div className="flex justify-between mb-2">
               <label className="text-sm text-[#666]">Side Length (mm)</label>

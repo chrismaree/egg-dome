@@ -395,7 +395,7 @@ function Ground() {
   )
 }
 
-function BeamElement({ element, row, totalRows }) {
+function BeamElement({ element, row }) {
   const color = useMemo(() => {
     // Strong vibrant colors palette
     const colors = [
@@ -410,9 +410,9 @@ function BeamElement({ element, row, totalRows }) {
       '#2ecc71', // Green
       '#9b59b6', // Violet
     ]
-    const colorIndex = Math.floor((row / totalRows) * colors.length)
-    return colors[colorIndex % colors.length]
-  }, [row, totalRows])
+    const colorIndex = row % colors.length
+    return colors[colorIndex]
+  }, [row])
   
   return (
     <mesh 
@@ -507,7 +507,6 @@ function BeamIntersectionStructure() {
               key={element.id} 
               element={element} 
               row={element.row}
-              totalRows={parameters.rows}
             />
           )
         } else if (element.type === 'marker') {
